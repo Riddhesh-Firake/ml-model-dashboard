@@ -323,7 +323,17 @@ class ApiClient {
 
     // Prediction methods
     async predict(modelId, inputData) {
-        return this.post(`/api/predict/${modelId}`, inputData);
+        console.log('🔮 API predict called with:', { modelId, inputData });
+        
+        if (!modelId || modelId === 'undefined') {
+            console.error('❌ Invalid modelId in predict:', modelId);
+            throw new Error('Model ID is required and cannot be undefined');
+        }
+        
+        const endpoint = `/api/predict/${modelId}`;
+        console.log('📡 Prediction endpoint:', endpoint);
+        
+        return this.post(endpoint, inputData);
     }
 
     // Monitoring methods

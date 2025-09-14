@@ -151,8 +151,13 @@ class Models {
         switch (action) {
             case 'show-model-details':
                 const modelId = target.getAttribute('data-model-id');
+                console.log('🖱️ Model card clicked, modelId:', modelId);
+                console.log('🎯 Target element:', target);
+                console.log('📋 All data attributes:', target.dataset);
                 if (modelId) {
                     this.showModelDetails(modelId);
+                } else {
+                    console.error('❌ No model ID found in data-model-id attribute');
                 }
                 break;
             case 'navigate':
@@ -372,9 +377,19 @@ class Models {
      */
     async showModelDetails(modelId) {
         try {
+            console.log('🔍 showModelDetails called with modelId:', modelId);
+            
+            if (!modelId || modelId === 'undefined') {
+                console.error('❌ Invalid model ID:', modelId);
+                showToast('Invalid model ID', 'error');
+                return;
+            }
+            
             showLoading('Loading model details...');
             
             const model = await window.apiClient.getModel(modelId);
+            console.log('✅ Model loaded:', model);
+            
             this.currentModel = model;
             
             this.renderModelModal(model);
@@ -1019,6 +1034,14 @@ class Models {
      * Run model test
      */
     async runModelTest(modelId) {
+        console.log('🧪 runModelTest called with modelId:', modelId);
+        
+        if (!modelId || modelId === 'undefined') {
+            console.error('❌ Invalid model ID for test:', modelId);
+            showToast('Invalid model ID for test', 'error');
+            return;
+        }
+        
         const testInput = document.getElementById('test-input');
         const testOutput = document.getElementById('test-output');
         const responseStatus = document.getElementById('response-status');
@@ -1027,6 +1050,7 @@ class Models {
         
         try {
             const inputData = JSON.parse(testInput.value || '{}');
+            console.log('📊 Test input data:', inputData);
             
             // Update UI for running state
             testOutput.value = 'Running test...';
@@ -1036,9 +1060,12 @@ class Models {
             runButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
             
             const startTime = Date.now();
+            console.log('🚀 Calling predict API with modelId:', modelId);
             const result = await window.apiClient.predict(modelId, inputData);
             const endTime = Date.now();
             const duration = endTime - startTime;
+            
+            console.log('✅ Prediction result:', result);
             
             // Update response
             testOutput.value = JSON.stringify(result, null, 2);

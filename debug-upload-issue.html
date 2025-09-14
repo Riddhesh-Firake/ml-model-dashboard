@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Upload Issue</title>
+</head>
+<body>
+    <h1>Debug Upload Issue</h1>
+    
+    <div>
+        <h2>Test Upload</h2>
+        <form id="test-upload-form">
+            <input type="text" id="model-name" placeholder="Model Name" value="Test Model" required>
+            <textarea id="model-description" placeholder="Description">Test model for debugging</textarea>
+            <button type="submit">Upload Model (Mock)</button>
+        </form>
+    </div>
+    
+    <div>
+        <h2>Test Get Models</h2>
+        <button id="get-models-btn">Get Models</button>
+        <pre id="models-output"></pre>
+    </div>
+    
+    <div>
+        <h2>Test Prediction</h2>
+        <input type="text" id="model-id-input" placeholder="Model ID">
+        <textarea id="prediction-input" placeholder='{"data": [1, 2, 3]}'></textarea>
+        <button id="predict-btn">Test Prediction</button>
+        <pre id="prediction-output"></pre>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+        
+        // Test upload
+        document.getElementById('test-upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('modelName', document.getElementById('model-name').value);
+            formData.append('description', document.getElementById('model-description').value);
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/models/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('Upload result:', result);
+                alert('Upload result: ' + JSON.stringify(result, null, 2));
+                
+                // Auto-fill model ID for testing
+                if (result.modelId) {
+                    document.getElementById('model-id-input').value = result.modelId;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload error: ' + error.message);
+            }
+        });
+        
+        // Test get models
+        document.getElementById('get-models-btn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${baseUrl}/api/models`);
+                const models = await response.json();
+                console.log('Models:', models);
+                document.getElementById('models-output').textContent = JSON.stringify(models, null, 2);
+            } catch (error) {
+                console.error('Get models error:', error);
+                document.getElementById('models-output').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Test prediction
+        document.getElementById('predict-btn').addEventListener('click', async () => {
+            const modelId = document.getElementById('model-id-input').value;
+            const inputData = document.getElementById('prediction-input').value;
+            
+            if (!modelId) {
+                alert('Please enter a model ID');
+                return;
+            }
+            
+            try {
+                const parsedInput = JSON.parse(inputData || '{}');
+                const response = await fetch(`${baseUrl}/api/predict/${modelId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(parsedInput)
+                });
+                
+                const result = await response.json();
+                console.log('Prediction result:', result);
+                document.getElementById('prediction-output').textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                console.error('Prediction error:', error);
+                document.getElementById('prediction-output').textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

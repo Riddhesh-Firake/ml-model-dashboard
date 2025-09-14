@@ -126,7 +126,7 @@ router.get('/', (req: Request, res: Response) => {
             createdAt: model.createdAt,
             lastUsed: model.lastUsed,
             fileSize: model.fileSize,
-            endpoint: `/api/models/${model.id}/predict`,
+            endpoint: `/api/predict/${model.id}`,
             requestCount: model.requestCount || 0,
             avgResponseTime: model.avgResponseTime || 0,
             successRate: model.successRate || 100
@@ -170,7 +170,7 @@ router.get('/:id', (req: Request, res: Response) => {
             createdAt: model.createdAt,
             lastUsed: model.lastUsed,
             fileSize: model.fileSize,
-            endpoint: `/api/models/${model.id}/predict`,
+            endpoint: `/api/predict/${model.id}`,
             requestCount: model.requestCount || 0,
             avgResponseTime: model.avgResponseTime || 0,
             successRate: model.successRate || 100
