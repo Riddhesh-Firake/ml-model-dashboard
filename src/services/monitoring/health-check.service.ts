@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from './logger.service';
 import { performanceMonitor } from './performance-monitor.service';
-import { databaseManager } from '../../database/database.manager';
+import { DatabaseManager } from '../../database/database.manager';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
@@ -256,7 +256,8 @@ class HealthCheckService {
     
     try {
       // Test database connection
-      await databaseManager.testConnection();
+      const dbManager = new DatabaseManager();
+      await dbManager.testConnection();
       const responseTime = Date.now() - startTime;
       
       if (responseTime > 5000) {

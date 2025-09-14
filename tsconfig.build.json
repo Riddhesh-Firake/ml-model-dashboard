@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/services/documentation/swagger-annotations.ts",
+    "src/services/monitoring/performance-monitor.service.ts",
+    "src/services/monitoring/request-logger.middleware.ts",
+    "src/services/upload/storage.service.ts",
+    "src/services/documentation/documentation.service.ts"
+  ]
+}
