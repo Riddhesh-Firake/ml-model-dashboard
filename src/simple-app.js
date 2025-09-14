@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 // Basic middleware
 app.use(cors());
@@ -35,10 +35,11 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Dashboard: http://localhost:${PORT}`);
-  console.log(`🔍 Health: http://localhost:${PORT}/health`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 SIMPLE APP: Server running on port ${PORT}`);
+  console.log(`📊 Dashboard: http://0.0.0.0:${PORT}`);
+  console.log(`🔍 Health: http://0.0.0.0:${PORT}/health`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
 });
 
 module.exports = app;
