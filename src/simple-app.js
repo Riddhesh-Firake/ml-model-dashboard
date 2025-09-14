@@ -20,11 +20,108 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Basic API endpoint
+// Basic API endpoints
 app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'ML Model Dashboard API is running',
     version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Mock authentication endpoints
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  // Simple mock authentication
+  if (email && password) {
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token: 'mock-jwt-token-' + Date.now(),
+      user: {
+        id: 1,
+        email: email,
+        name: 'Demo User'
+      }
+    });
+  } else {
+    res.status(400).json({
+      success: false,
+      message: 'Email and password required'
+    });
+  }
+});
+
+app.post('/api/auth/register', (req, res) => {
+  const { email, password } = req.body;
+  
+  if (email && password) {
+    res.json({
+      success: true,
+      message: 'Registration successful',
+      user: {
+        id: 1,
+        email: email,
+        name: 'Demo User'
+      }
+    });
+  } else {
+    res.status(400).json({
+      success: false,
+      message: 'Email and password required'
+    });
+  }
+});
+
+app.get('/api/auth/profile', (req, res) => {
+  res.json({
+    success: true,
+    user: {
+      id: 1,
+      email: 'demo@example.com',
+      name: 'Demo User'
+    }
+  });
+});
+
+// Mock models endpoints
+app.get('/api/models', (req, res) => {
+  res.json({
+    success: true,
+    models: [
+      {
+        id: 1,
+        name: 'Demo Model',
+        type: 'classification',
+        status: 'active',
+        created_at: new Date().toISOString()
+      }
+    ]
+  });
+});
+
+// Mock upload endpoint
+app.post('/api/models/upload', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Model upload successful (demo)',
+    model: {
+      id: Date.now(),
+      name: 'Uploaded Model',
+      status: 'processing'
+    }
+  });
+});
+
+// Mock prediction endpoint
+app.post('/api/predict/:modelId', (req, res) => {
+  const { modelId } = req.params;
+  res.json({
+    success: true,
+    modelId: modelId,
+    predictions: [0.85],
+    confidence: 0.92,
     timestamp: new Date().toISOString()
   });
 });
