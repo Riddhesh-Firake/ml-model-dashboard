@@ -1,7 +1,7 @@
-// Simple Express app for deployment
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
+// Ultra-simple Express app for deployment
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,4 +41,4 @@ app.listen(PORT, () => {
   console.log(`🔍 Health: http://localhost:${PORT}/health`);
 });
 
-export default app;
+module.exports = app;

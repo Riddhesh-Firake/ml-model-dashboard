@@ -3,8 +3,8 @@ services:
     name: ml-model-dashboard
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: npx ts-node src/simple-app.ts
+    buildCommand: npm install --production=false
+    startCommand: node src/simple-app.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
