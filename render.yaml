@@ -3,26 +3,12 @@ services:
     name: ml-model-dashboard
     env: node
     plan: free
-    buildCommand: npm install --production=false
-    startCommand: node src/simple-app.js
+    buildCommand: npm install
+    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: DATABASE_URL
-        fromDatabase:
-          name: ml-dashboard-db
-          property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      - key: API_KEY_SECRET
-        generateValue: true
     autoDeploy: false
-
-databases:
-  - name: ml-dashboard-db
-    databaseName: ml_dashboard
-    user: ml_user
-    plan: free
