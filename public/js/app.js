@@ -36,6 +36,14 @@ class App {
      */
     async init() {
         try {
+            console.log('🔄 App.init() called, initialized:', this.initialized);
+            
+            // Prevent re-initialization if already initialized
+            if (this.initialized) {
+                console.log('⚠️ App already initialized, skipping re-initialization');
+                return;
+            }
+
             // Check authentication
             if (!this.checkAuthentication()) {
                 this.showLoginForm();
@@ -45,7 +53,11 @@ class App {
             // Load user info
             await this.loadUserInfo();
 
+            // Clean up existing components if they exist
+            this.cleanup();
+
             // Initialize components
+            console.log('🏗️ Creating new component instances...');
             this.dashboard = new Dashboard();
             this.upload = new Upload();
             this.models = new Models();
@@ -57,12 +69,46 @@ class App {
             await this.showPage('dashboard');
 
             this.initialized = true;
-            console.log('ML Model Dashboard initialized successfully');
+            console.log('✅ ML Model Dashboard initialized successfully');
 
         } catch (error) {
-            console.error('Failed to initialize application:', error);
+            console.error('❌ Failed to initialize application:', error);
             showToast('Failed to initialize application', 'error');
         }
+    }
+
+    /**
+     * Reset the application state for re-initialization
+     */
+    reset() {
+        console.log('🔄 Resetting application state...');
+        this.initialized = false;
+        this.cleanup();
+    }
+
+    /**
+     * Clean up existing components and event listeners
+     */
+    cleanup() {
+        console.log('🧹 Cleaning up existing components...');
+        
+        // Clean up existing components if they have cleanup methods
+        if (this.dashboard && typeof this.dashboard.cleanup === 'function') {
+            this.dashboard.cleanup();
+        }
+        if (this.upload && typeof this.upload.cleanup === 'function') {
+            this.upload.cleanup();
+        }
+        if (this.models && typeof this.models.cleanup === 'function') {
+            this.models.cleanup();
+        }
+        
+        // Reset component references
+        this.dashboard = null;
+        this.upload = null;
+        this.models = null;
+        
+        console.log('✅ Cleanup completed');
     }
 
     /**
@@ -527,8 +573,9 @@ class App {
                 loginModal.remove();
             }
 
-            // Initialize application
-            console.log('🎯 Initializing application after login...');
+            // Reset and initialize application
+            console.log('🎯 Resetting and initializing application after login...');
+            this.reset();
             await this.init();
             console.log('🎉 Login process completed successfully');
             showToast('Login successful!', 'success');
@@ -617,8 +664,9 @@ class App {
                 registerModal.remove();
             }
 
-            // Initialize application
-            console.log('🎯 Initializing application after registration...');
+            // Reset and initialize application
+            console.log('🎯 Resetting and initializing application after registration...');
+            this.reset();
             await this.init();
             console.log('🎉 Registration process completed successfully');
             showToast('Registration successful!', 'success');

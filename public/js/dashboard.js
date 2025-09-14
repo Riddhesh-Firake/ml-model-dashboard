@@ -32,6 +32,21 @@ class Dashboard {
     }
 
     /**
+     * Cleanup method for dashboard
+     */
+    cleanup() {
+        console.log('🧹 Cleaning up Dashboard component...');
+        
+        // Clean up any dashboard-specific event listeners or intervals
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+        
+        console.log('✅ Dashboard component cleanup completed');
+    }
+
+    /**
      * Load dashboard data from API
      */
     async loadDashboardData() {

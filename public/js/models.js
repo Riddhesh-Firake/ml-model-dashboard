@@ -230,6 +230,45 @@ class Models {
     }
 
     /**
+     * Cleanup method to remove event listeners
+     */
+    cleanup() {
+        console.log('🧹 Cleaning up Models component...');
+        
+        // Remove event listeners from search and filter inputs
+        const searchInput = document.getElementById('search-models');
+        if (searchInput) {
+            searchInput.removeEventListener('input', this.handleSearchInput);
+        }
+        
+        const statusFilter = document.getElementById('filter-status');
+        if (statusFilter) {
+            statusFilter.removeEventListener('change', this.handleStatusFilter);
+        }
+        
+        const formatFilter = document.getElementById('filter-format');
+        if (formatFilter) {
+            formatFilter.removeEventListener('change', this.handleFormatFilter);
+        }
+        
+        // Remove modal event listeners
+        const closeModalBtn = document.getElementById('close-modal');
+        if (closeModalBtn) {
+            closeModalBtn.removeEventListener('click', this.closeModal);
+        }
+        
+        const modal = document.getElementById('model-modal');
+        if (modal) {
+            modal.removeEventListener('click', this.handleModalClick);
+        }
+        
+        // Remove keyboard event listener
+        document.removeEventListener('keydown', this.handleKeydown);
+        
+        console.log('✅ Models component cleanup completed');
+    }
+
+    /**
      * Load models from API
      */
     async loadModels() {

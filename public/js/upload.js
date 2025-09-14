@@ -1,10 +1,26 @@
 /**
  * Upload functionality for ML Model Dashboard
  */
+
+// Global flag to prevent multiple uploads across all instances
+window.globalUploadInProgress = false;
+
 class Upload {
     constructor() {
         this.currentFile = null;
         this.uploadInProgress = false;
+        
+        // Bind methods to preserve context for proper event listener removal
+        this.handleFormSubmit = this.handleFormSubmit.bind(this);
+        this.handleFileSelect = this.handleFileSelect.bind(this);
+        this.handleDragOver = this.handleDragOver.bind(this);
+        this.handleDragLeave = this.handleDragLeave.bind(this);
+        this.handleFileDrop = this.handleFileDrop.bind(this);
+        this.removeFile = this.removeFile.bind(this);
+        this.copyEndpoint = this.copyEndpoint.bind(this);
+        this.viewUploadedModel = this.viewUploadedModel.bind(this);
+        this.resetUploadForm = this.resetUploadForm.bind(this);
+        
         this.initializeEventListeners();
     }
 
@@ -12,38 +28,58 @@ class Upload {
      * Initialize event listeners
      */
     initializeEventListeners() {
+        console.log('🔗 Initializing Upload event listeners...');
+        
         // Form submission
         const uploadForm = document.getElementById('upload-form');
-        uploadForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', this.handleFormSubmit);
+        }
 
         // File input change
         const fileInput = document.getElementById('model-file');
-        fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        if (fileInput) {
+            fileInput.addEventListener('change', this.handleFileSelect);
+        }
 
         // Drag and drop
         const uploadArea = document.getElementById('file-upload-area');
-        uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
-        uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-        uploadArea.addEventListener('drop', (e) => this.handleFileDrop(e));
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', this.handleDragOver);
+            uploadArea.addEventListener('dragleave', this.handleDragLeave);
+            uploadArea.addEventListener('drop', this.handleFileDrop);
+            
+            // File link click
+            const fileLink = uploadArea.querySelector('.file-link');
+            if (fileLink) {
+                fileLink.addEventListener('click', () => fileInput.click());
+            }
+        }
 
         // Remove file button
         const removeFileBtn = document.getElementById('remove-file');
-        removeFileBtn.addEventListener('click', () => this.removeFile());
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', this.removeFile);
+        }
 
         // Copy endpoint button
         const copyEndpointBtn = document.getElementById('copy-endpoint');
-        copyEndpointBtn.addEventListener('click', () => this.copyEndpoint());
+        if (copyEndpointBtn) {
+            copyEndpointBtn.addEventListener('click', this.copyEndpoint);
+        }
 
         // Result action buttons
         const viewModelBtn = document.getElementById('view-model');
-        viewModelBtn.addEventListener('click', () => this.viewUploadedModel());
+        if (viewModelBtn) {
+            viewModelBtn.addEventListener('click', this.viewUploadedModel);
+        }
 
         const uploadAnotherBtn = document.getElementById('upload-another');
-        uploadAnotherBtn.addEventListener('click', () => this.resetUploadForm());
-
-        // File link click
-        const fileLink = uploadArea.querySelector('.file-link');
-        fileLink.addEventListener('click', () => fileInput.click());
+        if (uploadAnotherBtn) {
+            uploadAnotherBtn.addEventListener('click', this.resetUploadForm);
+        }
+        
+        console.log('✅ Upload event listeners initialized');
     }
 
     /**
@@ -51,8 +87,12 @@ class Upload {
      */
     async handleFormSubmit(e) {
         e.preventDefault();
+        e.stopImmediatePropagation(); // Prevent other event listeners from firing
         
-        if (this.uploadInProgress) {
+        console.log('📤 Upload form submitted, uploadInProgress:', this.uploadInProgress, 'globalUploadInProgress:', window.globalUploadInProgress);
+        
+        if (this.uploadInProgress || window.globalUploadInProgress) {
+            console.log('⚠️ Upload already in progress, ignoring duplicate submission');
             return;
         }
 
@@ -65,6 +105,16 @@ class Upload {
 
         try {
             this.uploadInProgress = true;
+            window.globalUploadInProgress = true;
+            console.log('🔒 Upload started, setting flags to true');
+            
+            // Disable the submit button to prevent multiple clicks
+            const submitBtn = document.getElementById('upload-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            }
+            
             this.showUploadProgress();
             
             const result = await this.uploadModel(formData);
@@ -75,6 +125,15 @@ class Upload {
             this.showUploadError(error);
         } finally {
             this.uploadInProgress = false;
+            window.globalUploadInProgress = false;
+            console.log('🔓 Upload completed, setting flags to false');
+            
+            // Re-enable the submit button
+            const submitBtn = document.getElementById('upload-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Model';
+            }
         }
     }
 
@@ -359,6 +418,56 @@ class Upload {
      */
     init() {
         this.resetUploadForm();
+    }
+
+    /**
+     * Cleanup method to remove event listeners
+     */
+    cleanup() {
+        console.log('🧹 Cleaning up Upload component...');
+        
+        // Remove form event listener
+        const uploadForm = document.getElementById('upload-form');
+        if (uploadForm) {
+            uploadForm.removeEventListener('submit', this.handleFormSubmit);
+        }
+        
+        // Remove file input event listener
+        const fileInput = document.getElementById('model-file');
+        if (fileInput) {
+            fileInput.removeEventListener('change', this.handleFileSelect);
+        }
+        
+        // Remove drag and drop event listeners
+        const uploadArea = document.getElementById('file-upload-area');
+        if (uploadArea) {
+            uploadArea.removeEventListener('dragover', this.handleDragOver);
+            uploadArea.removeEventListener('dragleave', this.handleDragLeave);
+            uploadArea.removeEventListener('drop', this.handleFileDrop);
+        }
+        
+        // Remove other button event listeners
+        const removeFileBtn = document.getElementById('remove-file');
+        if (removeFileBtn) {
+            removeFileBtn.removeEventListener('click', this.removeFile);
+        }
+        
+        const copyEndpointBtn = document.getElementById('copy-endpoint');
+        if (copyEndpointBtn) {
+            copyEndpointBtn.removeEventListener('click', this.copyEndpoint);
+        }
+        
+        const viewModelBtn = document.getElementById('view-model');
+        if (viewModelBtn) {
+            viewModelBtn.removeEventListener('click', this.viewUploadedModel);
+        }
+        
+        const uploadAnotherBtn = document.getElementById('upload-another');
+        if (uploadAnotherBtn) {
+            uploadAnotherBtn.removeEventListener('click', this.resetUploadForm);
+        }
+        
+        console.log('✅ Upload component cleanup completed');
     }
 }
 
