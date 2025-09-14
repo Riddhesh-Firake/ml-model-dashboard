@@ -89,28 +89,37 @@ app.get('/api/auth/profile', (req, res) => {
 app.get('/api/models', (req, res) => {
   res.json({
     success: true,
-    models: [
-      {
-        id: 1,
-        name: 'Demo Model',
-        type: 'classification',
-        status: 'active',
-        created_at: new Date().toISOString()
-      }
-    ]
+    models: uploadedModels
   });
 });
 
-// Mock upload endpoint
+// In-memory storage for demo
+let uploadedModels = [
+  {
+    id: 1,
+    name: 'Demo Model',
+    type: 'classification',
+    status: 'active',
+    created_at: new Date().toISOString()
+  }
+];
+
+// Mock upload endpoint with persistence
 app.post('/api/models/upload', (req, res) => {
+  const newModel = {
+    id: Date.now(),
+    name: req.body.modelName || 'Uploaded Model',
+    type: 'classification',
+    status: 'active',
+    created_at: new Date().toISOString()
+  };
+  
+  uploadedModels.push(newModel);
+  
   res.json({
     success: true,
     message: 'Model upload successful (demo)',
-    model: {
-      id: Date.now(),
-      name: 'Uploaded Model',
-      status: 'processing'
-    }
+    model: newModel
   });
 });
 
@@ -122,6 +131,44 @@ app.post('/api/predict/:modelId', (req, res) => {
     modelId: modelId,
     predictions: [0.85],
     confidence: 0.92,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Mock monitoring endpoints
+app.get('/api/monitoring/user/stats', (req, res) => {
+  res.json({
+    success: true,
+    totalRequests: 2139,
+    avgResponseTime: 189,
+    successfulRequests: 2074,
+    errorCount: 65,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/monitoring/performance', (req, res) => {
+  res.json({
+    success: true,
+    performance: {
+      cpuUsage: 45.2,
+      memoryUsage: 67.8,
+      responseTime: 189,
+      throughput: 1250
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/monitoring/system/stats', (req, res) => {
+  res.json({
+    success: true,
+    system: {
+      uptime: 86400,
+      totalModels: uploadedModels.length,
+      activeUsers: 12,
+      totalPredictions: 5432
+    },
     timestamp: new Date().toISOString()
   });
 });
