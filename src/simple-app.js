@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 10000;
 // Basic middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Handle form data
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Health check endpoint
@@ -25,7 +26,19 @@ app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'ML Model Dashboard API is running',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    modelsCount: uploadedModels.length
+  });
+});
+
+// Debug endpoint
+app.get('/api/debug/models', (req, res) => {
+  res.json({
+    success: true,
+    debug: true,
+    modelsCount: uploadedModels.length,
+    models: uploadedModels,
+    rawModels: JSON.stringify(uploadedModels, null, 2)
   });
 });
 
@@ -87,9 +100,14 @@ app.get('/api/auth/profile', (req, res) => {
 
 // Mock models endpoints
 app.get('/api/models', (req, res) => {
+  console.log('📋 Models request - Current storage:', uploadedModels.length, 'models');
+  console.log('📋 Models data:', uploadedModels);
+  
   res.json({
     success: true,
-    models: uploadedModels
+    models: uploadedModels,
+    total: uploadedModels.length,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -106,20 +124,30 @@ let uploadedModels = [
 
 // Mock upload endpoint with persistence
 app.post('/api/models/upload', (req, res) => {
+  console.log('📤 Upload request received:', req.body);
+  
+  const modelName = req.body?.modelName || req.body?.name || 'Uploaded Model';
+  const modelType = req.body?.type || 'classification';
+  
   const newModel = {
     id: Date.now(),
-    name: req.body.modelName || 'Uploaded Model',
-    type: 'classification',
+    name: modelName,
+    type: modelType,
     status: 'active',
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    description: req.body?.description || 'Uploaded via dashboard'
   };
   
   uploadedModels.push(newModel);
   
+  console.log('✅ Model added to storage:', newModel);
+  console.log('📊 Total models now:', uploadedModels.length);
+  
   res.json({
     success: true,
     message: 'Model upload successful (demo)',
-    model: newModel
+    model: newModel,
+    totalModels: uploadedModels.length
   });
 });
 
