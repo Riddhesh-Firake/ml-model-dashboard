@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: npm run dev
+    startCommand: npx ts-node src/simple-app.ts
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
