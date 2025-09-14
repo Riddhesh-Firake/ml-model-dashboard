@@ -9,6 +9,21 @@
     <h1>Debug Upload Issue</h1>
     
     <div>
+        <h2>Authentication</h2>
+        <div>
+            <h3>Login</h3>
+            <input type="email" id="login-email" placeholder="Email" value="user1@example.com">
+            <input type="password" id="login-password" placeholder="Password" value="password">
+            <button id="login-btn">Login</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+        <div>
+            <h3>Current User</h3>
+            <pre id="user-info"></pre>
+        </div>
+    </div>
+    
+    <div>
         <h2>Test Upload</h2>
         <form id="test-upload-form">
             <input type="text" id="model-name" placeholder="Model Name" value="Test Model" required>
@@ -33,10 +48,60 @@
 
     <script>
         const baseUrl = window.location.origin;
+        let currentToken = null;
+        
+        // Helper function to get auth headers
+        function getAuthHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            if (currentToken) {
+                headers['Authorization'] = `Bearer ${currentToken}`;
+            }
+            return headers;
+        }
+        
+        // Login
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const result = await response.json();
+                console.log('Login result:', result);
+                
+                if (result.token) {
+                    currentToken = result.token;
+                    document.getElementById('user-info').textContent = JSON.stringify(result.user, null, 2);
+                    alert('Login successful!');
+                } else {
+                    alert('Login failed: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login error: ' + error.message);
+            }
+        });
+        
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            currentToken = null;
+            document.getElementById('user-info').textContent = '';
+            alert('Logged out');
+        });
         
         // Test upload
         document.getElementById('test-upload-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            if (!currentToken) {
+                alert('Please login first');
+                return;
+            }
             
             const formData = new FormData();
             formData.append('modelName', document.getElementById('model-name').value);
@@ -45,6 +110,9 @@
             try {
                 const response = await fetch(`${baseUrl}/api/models/upload`, {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    },
                     body: formData
                 });
                 
@@ -64,8 +132,15 @@
         
         // Test get models
         document.getElementById('get-models-btn').addEventListener('click', async () => {
+            if (!currentToken) {
+                alert('Please login first');
+                return;
+            }
+            
             try {
-                const response = await fetch(`${baseUrl}/api/models`);
+                const response = await fetch(`${baseUrl}/api/models`, {
+                    headers: getAuthHeaders()
+                });
                 const models = await response.json();
                 console.log('Models:', models);
                 document.getElementById('models-output').textContent = JSON.stringify(models, null, 2);
@@ -80,6 +155,11 @@
             const modelId = document.getElementById('model-id-input').value;
             const inputData = document.getElementById('prediction-input').value;
             
+            if (!currentToken) {
+                alert('Please login first');
+                return;
+            }
+            
             if (!modelId) {
                 alert('Please enter a model ID');
                 return;
@@ -89,9 +169,7 @@
                 const parsedInput = JSON.parse(inputData || '{}');
                 const response = await fetch(`${baseUrl}/api/predict/${modelId}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(parsedInput)
                 });
                 
