@@ -1,0 +1,573 @@
+{
+	"info": {
+		"_postman_id": "house-prediction-api-tests-fixed",
+		"name": "House Prediction Model API Tests (With Auth)",
+		"description": "Complete test suite for testing the house prediction ML model via API with authentication",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "{{api_key}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "X-API-Key",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication Setup",
+			"item": [
+				{
+					"name": "1. Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('user_id', response.user.id);",
+									"    pm.collectionVariables.set('auth_token', response.token || 'session_token');",
+									"    console.log('✅ User registered successfully');",
+									"    console.log('User ID:', response.user.id);",
+									"} else if (pm.response.code === 400) {",
+									"    console.log('⚠️ User might already exist, try login instead');",
+									"} else {",
+									"    console.log('❌ Registration failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a test user account. Run this first!"
+					}
+				},
+				{
+					"name": "2. Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('user_id', response.user.id);",
+									"    pm.collectionVariables.set('auth_token', response.token || 'session_token');",
+									"    console.log('✅ Login successful');",
+									"    console.log('User ID:', response.user.id);",
+									"} else {",
+									"    console.log('❌ Login failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with test user credentials. Run this if registration fails."
+					}
+				},
+				{
+					"name": "3. Create API Key",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('api_key', response.key);",
+									"    console.log('✅ API Key created successfully');",
+									"    console.log('API Key:', response.key);",
+									"    console.log('🎉 Authentication setup complete! You can now run the model tests.');",
+									"} else {",
+									"    console.log('❌ API Key creation failed:', pm.response.text());",
+									"    console.log('Make sure you ran login first and have a valid auth_token');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"House Prediction Test Key\",\n  \"description\": \"API key for testing house prediction model\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/api-keys",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"api-keys"
+							]
+						},
+						"description": "Create an API key for testing. Run this after login."
+					}
+				}
+			],
+			"description": "Run these 3 requests in order to set up authentication"
+		},
+		{
+			"name": "🏠 Model Testing",
+			"item": [
+				{
+					"name": "Get All Models",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const models = pm.response.json();",
+									"    console.log('✅ Found', models.length, 'models');",
+									"    ",
+									"    // Look for house prediction model",
+									"    const houseModel = models.find(m => ",
+									"        m.name.toLowerCase().includes('house') || ",
+									"        m.name.toLowerCase().includes('price')",
+									"    );",
+									"    ",
+									"    if (houseModel) {",
+									"        pm.collectionVariables.set('model_id', houseModel.id);",
+									"        console.log('🏠 Found house model:', houseModel.name);",
+									"        console.log('Model ID:', houseModel.id);",
+									"    } else {",
+									"        console.log('⚠️ No house model found. Available models:');",
+									"        models.forEach(m => console.log('-', m.name, '(' + m.id + ')'));",
+									"    }",
+									"} else {",
+									"    console.log('❌ Failed to get models:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/models",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"models"
+							]
+						},
+						"description": "Get list of all models and find your house prediction model"
+					}
+				},
+				{
+					"name": "Test Small House (2br, 1ba, 900sqft, 25yr)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const result = pm.response.json();",
+									"    const price = result.prediction || result.result || result;",
+									"    console.log('🏠 Small House Prediction: $' + price.toLocaleString());",
+									"    console.log('Expected range: $150,000 - $250,000');",
+									"    ",
+									"    if (price >= 150000 && price <= 250000) {",
+									"        console.log('✅ Prediction within expected range');",
+									"    } else {",
+									"        console.log('⚠️ Prediction outside expected range');",
+									"    }",
+									"} else {",
+									"    console.log('❌ Prediction failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"features\": [2, 1, 900, 25]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/predict/{{model_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"predict",
+								"{{model_id}}"
+							]
+						},
+						"description": "Small starter home: 2 bed, 1 bath, 900 sqft, 25 years old"
+					}
+				},
+				{
+					"name": "Test Average House (3br, 2ba, 1500sqft, 10yr)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const result = pm.response.json();",
+									"    const price = result.prediction || result.result || result;",
+									"    console.log('🏡 Average House Prediction: $' + price.toLocaleString());",
+									"    console.log('Expected range: $250,000 - $400,000');",
+									"    ",
+									"    if (price >= 250000 && price <= 400000) {",
+									"        console.log('✅ Prediction within expected range');",
+									"    } else {",
+									"        console.log('⚠️ Prediction outside expected range');",
+									"    }",
+									"} else {",
+									"    console.log('❌ Prediction failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"features\": [3, 2, 1500, 10]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/predict/{{model_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"predict",
+								"{{model_id}}"
+							]
+						},
+						"description": "Average family home: 3 bed, 2 bath, 1500 sqft, 10 years old"
+					}
+				},
+				{
+					"name": "Test Luxury House (5br, 3ba, 3500sqft, 5yr)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const result = pm.response.json();",
+									"    const price = result.prediction || result.result || result;",
+									"    console.log('🏰 Luxury House Prediction: $' + price.toLocaleString());",
+									"    console.log('Expected range: $500,000 - $800,000');",
+									"    ",
+									"    if (price >= 500000 && price <= 800000) {",
+									"        console.log('✅ Prediction within expected range');",
+									"    } else {",
+									"        console.log('⚠️ Prediction outside expected range');",
+									"    }",
+									"} else {",
+									"    console.log('❌ Prediction failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"features\": [5, 3, 3500, 5]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/predict/{{model_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"predict",
+								"{{model_id}}"
+							]
+						},
+						"description": "Large luxury home: 5 bed, 3 bath, 3500 sqft, 5 years old"
+					}
+				},
+				{
+					"name": "Test Your Custom House",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const result = pm.response.json();",
+									"    const price = result.prediction || result.result || result;",
+									"    console.log('🎯 Custom House Prediction: $' + price.toLocaleString());",
+									"} else {",
+									"    console.log('❌ Prediction failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"features\": [4, 2.5, 2200, 8]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/predict/{{model_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"predict",
+								"{{model_id}}"
+							]
+						},
+						"description": "Modify the features array with your house: [bedrooms, bathrooms, sqft, age]"
+					}
+				}
+			],
+			"description": "Test your house prediction model with different scenarios"
+		},
+		{
+			"name": "🔧 Alternative Input Formats",
+			"item": [
+				{
+					"name": "Test Array Format",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[3, 2, 1500, 10]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/predict/{{model_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"predict",
+								"{{model_id}}"
+							]
+						},
+						"description": "Test with direct array format"
+					}
+				},
+				{
+					"name": "Test Object Format",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bedrooms\": 3,\n  \"bathrooms\": 2,\n  \"sqft\": 1500,\n  \"age\": 10\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/predict/{{model_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"predict",
+								"{{model_id}}"
+							]
+						},
+						"description": "Test with named object format"
+					}
+				},
+				{
+					"name": "Test Input Wrapper Format",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"input\": [3, 2, 1500, 10]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/predict/{{model_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"predict",
+								"{{model_id}}"
+							]
+						},
+						"description": "Test with input wrapper format"
+					}
+				}
+			],
+			"description": "Try different input formats to see which one works"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "model_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "test_email",
+			"value": "test@example.com",
+			"type": "string"
+		},
+		{
+			"key": "test_password",
+			"value": "testpassword123",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "api_key",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

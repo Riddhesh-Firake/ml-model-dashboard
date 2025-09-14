@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Fix - Complete Solution</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { margin: 5px; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Authentication Fix - Complete Solution</h1>
+    <p>This page will fix the "Invalid or expired token" error by implementing proper authentication flow.</p>
+
+    <div class="section info">
+        <h3>Problem Analysis</h3>
+        <p>The issue is that the frontend creates fake session tokens instead of using real JWT tokens from the backend.</p>
+        <ul>
+            <li>Frontend stores: <code>session_${timestamp}</code></li>
+            <li>Backend expects: Valid JWT token or API key</li>
+            <li>Result: Authentication fails during model testing</li>
+        </ul>
+    </div>
+
+    <div class="section info">
+        <h3>Step 1: Test Current Authentication</h3>
+        <button class="btn-primary" onclick="testCurrentAuth()">Test Current Auth Status</button>
+        <div id="current-auth-result"></div>
+    </div>
+
+    <div class="section info">
+        <h3>Step 2: Register New User (Get Real Token)</h3>
+        <button class="btn-primary" onclick="registerTestUser()">Register Test User</button>
+        <div id="register-result"></div>
+    </div>
+
+    <div class="section info">
+        <h3>Step 3: Login with Real Credentials</h3>
+        <button class="btn-primary" onclick="loginTestUser()">Login Test User</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="section info">
+        <h3>Step 4: Test Model Prediction with Valid Token</h3>
+        <button class="btn-success" onclick="testModelPrediction()">Test Model Prediction</button>
+        <div id="prediction-result"></div>
+    </div>
+
+    <div class="section info">
+        <h3>Step 5: Create API Key (Alternative Auth)</h3>
+        <button class="btn-primary" onclick="createApiKey()">Create API Key</button>
+        <div id="api-key-result"></div>
+    </div>
+
+    <div class="section info">
+        <h3>Step 6: Test with API Key</h3>
+        <button class="btn-success" onclick="testWithApiKey()">Test with API Key</button>
+        <div id="api-key-test-result"></div>
+    </div>
+
+    <script>
+        // Test user credentials
+        const testUser = {
+            email: 'test-auth-fix@example.com',
+            password: 'TestPassword123!'
+        };
+
+        let currentToken = null;
+        let currentApiKey = null;
+
+        async function testCurrentAuth() {
+            const resultDiv = document.getElementById('current-auth-result');
+            
+            try {
+                const authToken = localStorage.getItem('auth_token');
+                const apiKey = localStorage.getItem('api_key');
+                const userEmail = localStorage.getItem('user_email');
+
+                resultDiv.innerHTML = `
+                    <div class="info">
+                        <h4>Current Authentication Status</h4>
+                        <p><strong>Auth Token:</strong> ${authToken || 'None'}</p>
+                        <p><strong>API Key:</strong> ${apiKey || 'None'}</p>
+                        <p><strong>User Email:</strong> ${userEmail || 'None'}</p>
+                        <p><strong>Token Type:</strong> ${authToken && authToken.startsWith('session_') ? 'Fake Session Token (PROBLEM!)' : 'Unknown'}</p>
+                    </div>
+                `;
+
+                // Test if current token works
+                if (authToken || apiKey) {
+                    const headers = {};
+                    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+                    if (apiKey) headers['X-API-Key'] = apiKey;
+
+                    const response = await fetch('/api/models', { headers });
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        resultDiv.innerHTML += `
+                            <div class="success">
+                                <p>✅ Current authentication works!</p>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML += `
+                            <div class="error">
+                                <p>❌ Current authentication failed: ${result.error?.message || 'Unknown error'}</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `
+                    <div class="error">
+                        <p>❌ Error testing authentication: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function registerTestUser() {
+            const resultDiv = document.getElementById('register-result');
+            
+            try {
+                resultDiv.innerHTML = '<p>Registering test user...</p>';
+
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testUser)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentToken = result.token;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Registration Successful</h4>
+                            <p><strong>User ID:</strong> ${result.user?.id}</p>
+                            <p><strong>Email:</strong> ${result.user?.email}</p>
+                            <p><strong>Token:</strong> ${result.token ? 'Received' : 'Not received'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+
+                    // Store the real token
+                    if (result.token) {
+                        localStorage.setItem('auth_token', result.token);
+                        localStorage.setItem('user_email', result.user?.email);
+                        localStorage.setItem('user_id', result.user?.id);
+                    }
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Registration Failed</h4>
+                            <p>${result.error?.message || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Registration Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loginTestUser() {
+            const resultDiv = document.getElementById('login-result');
+            
+            try {
+                resultDiv.innerHTML = '<p>Logging in test user...</p>';
+
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testUser)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentToken = result.token;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Login Successful</h4>
+                            <p><strong>User ID:</strong> ${result.user?.id}</p>
+                            <p><strong>Email:</strong> ${result.user?.email}</p>
+                            <p><strong>Token:</strong> ${result.token ? 'Received' : 'Not received'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+
+                    // Store the real token
+                    if (result.token) {
+                        localStorage.setItem('auth_token', result.token);
+                        localStorage.setItem('user_email', result.user?.email);
+                        localStorage.setItem('user_id', result.user?.id);
+                    }
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Login Failed</h4>
+                            <p>${result.error?.message || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Login Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testModelPrediction() {
+            const resultDiv = document.getElementById('prediction-result');
+            
+            try {
+                const token = currentToken || localStorage.getItem('auth_token');
+                
+                if (!token) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <p>❌ No authentication token available. Please login first.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                resultDiv.innerHTML = '<p>Testing model prediction...</p>';
+
+                const testData = {
+                    bedrooms: 3,
+                    bathrooms: 2,
+                    sqft: 1500,
+                    age: 10
+                };
+
+                const response = await fetch('/api/predict/test-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Model Prediction Successful</h4>
+                            <p><strong>Prediction:</strong> $${result.prediction?.toLocaleString()}</p>
+                            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                            <p><strong>Processing Time:</strong> ${result.processingTime?.toFixed(2)}ms</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Model Prediction Failed</h4>
+                            <p>${result.error?.message || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Prediction Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function createApiKey() {
+            const resultDiv = document.getElementById('api-key-result');
+            
+            try {
+                const token = currentToken || localStorage.getItem('auth_token');
+                
+                if (!token) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <p>❌ No authentication token available. Please login first.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                resultDiv.innerHTML = '<p>Creating API key...</p>';
+
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name: 'Test API Key' })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentApiKey = result.key;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ API Key Created Successfully</h4>
+                            <p><strong>Key ID:</strong> ${result.id}</p>
+                            <p><strong>Name:</strong> ${result.name}</p>
+                            <p><strong>API Key:</strong> ${result.key}</p>
+                            <p><strong>Created:</strong> ${new Date(result.createdAt).toLocaleString()}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+
+                    // Store the API key
+                    localStorage.setItem('api_key', result.key);
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ API Key Creation Failed</h4>
+                            <p>${result.error?.message || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ API Key Creation Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testWithApiKey() {
+            const resultDiv = document.getElementById('api-key-test-result');
+            
+            try {
+                const apiKey = currentApiKey || localStorage.getItem('api_key');
+                
+                if (!apiKey) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <p>❌ No API key available. Please create one first.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                resultDiv.innerHTML = '<p>Testing with API key...</p>';
+
+                const testData = {
+                    bedrooms: 4,
+                    bathrooms: 3,
+                    sqft: 2000,
+                    age: 5
+                };
+
+                const response = await fetch('/api/predict/test-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ API Key Authentication Successful</h4>
+                            <p><strong>Prediction:</strong> $${result.prediction?.toLocaleString()}</p>
+                            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                            <p><strong>Processing Time:</strong> ${result.processingTime?.toFixed(2)}ms</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ API Key Authentication Failed</h4>
+                            <p>${result.error?.message || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ API Key Test Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-test current auth on page load
+        window.addEventListener('load', () => {
+            setTimeout(testCurrentAuth, 1000);
+        });
+    </script>
+</body>
+</html>

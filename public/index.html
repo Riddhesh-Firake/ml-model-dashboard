@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Dashboard</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-brain"></i>
+                    <span>ML Model Dashboard</span>
+                </div>
+                <div class="nav-menu">
+                    <a href="#dashboard" class="nav-link active" data-page="dashboard">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="#upload" class="nav-link" data-page="upload">
+                        <i class="fas fa-upload"></i> Upload Model
+                    </a>
+                    <a href="#models" class="nav-link" data-page="models">
+                        <i class="fas fa-cube"></i> My Models
+                    </a>
+                    <div class="nav-user">
+                        <span id="user-email">user@example.com</span>
+                        <button id="logout-btn" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <p>Overview of your ML models and usage statistics</p>
+                    <!-- Debug buttons -->
+                    <div class="debug-buttons">
+                        <button id="test-registration-btn" class="btn btn-outline debug-btn">
+                            <i class="fas fa-bug"></i> Test Registration
+                        </button>
+                        <button id="test-login-btn" class="btn btn-outline debug-btn">
+                            <i class="fas fa-bug"></i> Test Login
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-cube"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-models">0</h3>
+                            <p>Total Models</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-requests">0</h3>
+                            <p>Total Requests</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="avg-response-time">0ms</h3>
+                            <p>Avg Response Time</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="active-models">0</h3>
+                            <p>Active Models</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="dashboard-grid">
+                        <div class="recent-models-section">
+                            <h2>Recent Models</h2>
+                            <div id="recent-models-list" class="model-list">
+                                <!-- Recent models will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="analytics-section">
+                            <h2>Usage Analytics</h2>
+                            <div class="analytics-tabs">
+                                <button class="analytics-tab active" data-tab="requests">API Requests</button>
+                                <button class="analytics-tab" data-tab="performance">Performance</button>
+                                <button class="analytics-tab" data-tab="models">Model Usage</button>
+                                <button class="analytics-tab" data-tab="errors">Error Rates</button>
+                            </div>
+                            
+                            <div class="analytics-content">
+                                <!-- API Requests Tab -->
+                                <div id="requests-tab" class="analytics-tab-content active">
+                                    <div class="chart-container">
+                                        <canvas id="requests-chart" width="600" height="300"></canvas>
+                                    </div>
+                                    <div class="analytics-summary">
+                                        <div class="summary-item">
+                                            <span class="summary-label">Today</span>
+                                            <span class="summary-value" id="requests-today">0</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">This Week</span>
+                                            <span class="summary-value" id="requests-week">0</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Peak Hour</span>
+                                            <span class="summary-value" id="requests-peak">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Performance Tab -->
+                                <div id="performance-tab" class="analytics-tab-content">
+                                    <div class="chart-container">
+                                        <canvas id="performance-chart" width="600" height="300"></canvas>
+                                    </div>
+                                    <div class="analytics-summary">
+                                        <div class="summary-item">
+                                            <span class="summary-label">Avg Response</span>
+                                            <span class="summary-value" id="avg-response">0ms</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">P95 Response</span>
+                                            <span class="summary-value" id="p95-response">0ms</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Throughput</span>
+                                            <span class="summary-value" id="throughput">0/min</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Model Usage Tab -->
+                                <div id="models-tab" class="analytics-tab-content">
+                                    <div class="chart-container">
+                                        <canvas id="models-chart" width="600" height="300"></canvas>
+                                    </div>
+                                    <div class="model-usage-list" id="model-usage-list">
+                                        <!-- Model usage items will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Error Rates Tab -->
+                                <div id="errors-tab" class="analytics-tab-content">
+                                    <div class="chart-container">
+                                        <canvas id="errors-chart" width="600" height="300"></canvas>
+                                    </div>
+                                    <div class="analytics-summary">
+                                        <div class="summary-item">
+                                            <span class="summary-label">Success Rate</span>
+                                            <span class="summary-value" id="success-rate">0%</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Error Rate</span>
+                                            <span class="summary-value" id="error-rate">0%</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Total Errors</span>
+                                            <span class="summary-value" id="total-errors">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Page -->
+            <div id="upload-page" class="page">
+                <div class="page-header">
+                    <h1>Upload Model</h1>
+                    <p>Upload your trained ML model and generate an API endpoint</p>
+                </div>
+                
+                <div class="upload-container">
+                    <form id="upload-form" class="upload-form">
+                        <div class="form-group">
+                            <label for="model-name" class="form-label">Model Name *</label>
+                            <input type="text" id="model-name" name="modelName" required 
+                                   placeholder="e.g., Customer Churn Predictor"
+                                   autocomplete="off">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="model-description" class="form-label">Description</label>
+                            <textarea id="model-description" name="description" rows="3"
+                                      placeholder="Describe what your model does, its use case, and expected inputs..."
+                                      autocomplete="off"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="model-file">Model File *</label>
+                            <div class="file-upload-area" id="file-upload-area">
+                                <input type="file" id="model-file" name="modelFile" accept=".pkl,.joblib,.h5,.onnx,.pt,.pth" required>
+                                <div class="file-upload-content">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Drag and drop your model file here or <span class="file-link">browse</span></p>
+                                    <small>Supported formats: .pkl, .joblib, .h5, .onnx, .pt, .pth (Max: 100MB)</small>
+                                </div>
+                            </div>
+                            <div id="file-info" class="file-info hidden">
+                                <i class="fas fa-file"></i>
+                                <span id="file-name"></span>
+                                <span id="file-size"></span>
+                                <button type="button" id="remove-file" class="btn-remove">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" id="upload-btn" class="btn btn-primary" disabled>
+                                <i class="fas fa-upload"></i>
+                                Upload Model
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Upload Progress -->
+                    <div id="upload-progress" class="upload-progress hidden">
+                        <div class="progress-header">
+                            <h3>Uploading Model...</h3>
+                            <span id="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <div class="progress-status">
+                            <span id="progress-status">Preparing upload...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Success -->
+                    <div id="upload-success" class="upload-result hidden">
+                        <div class="success-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3>Model Uploaded Successfully!</h3>
+                        <p>Your model has been uploaded and an API endpoint has been generated.</p>
+                        <div class="endpoint-info">
+                            <label>API Endpoint:</label>
+                            <div class="endpoint-url">
+                                <input type="text" id="generated-endpoint" readonly>
+                                <button id="copy-endpoint" class="btn btn-outline">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="result-actions">
+                            <button id="view-model" class="btn btn-primary">View Model Details</button>
+                            <button id="upload-another" class="btn btn-outline">Upload Another Model</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Models Page -->
+            <div id="models-page" class="page">
+                <div class="page-header">
+                    <h1>My Models</h1>
+                    <p>Manage your uploaded models and view their performance</p>
+                </div>
+                
+                <div class="models-container">
+                    <div class="models-filters">
+                        <div class="filter-group">
+                            <div class="search-wrapper">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="search-models" placeholder="Search models by name or description...">
+                            </div>
+                            <select id="filter-status">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                            <select id="filter-format">
+                                <option value="">All Formats</option>
+                                <option value="pkl">Pickle (.pkl)</option>
+                                <option value="joblib">Joblib (.joblib)</option>
+                                <option value="h5">Keras (.h5)</option>
+                                <option value="onnx">ONNX (.onnx)</option>
+                                <option value="pt">PyTorch (.pt)</option>
+                                <option value="pth">PyTorch State (.pth)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="models-grid" class="models-grid">
+                        <!-- Models will be populated here -->
+                    </div>
+                    
+                    <div id="no-models" class="no-models hidden">
+                        <i class="fas fa-cube"></i>
+                        <h3>No Models Found</h3>
+                        <p>You haven't uploaded any models yet.</p>
+                        <button class="btn btn-primary" data-page="upload">
+                            <i class="fas fa-upload"></i>
+                            Upload Your First Model
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Model Details Modal -->
+        <div id="model-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-model-name">Model Details</h2>
+                    <button id="close-modal" class="btn-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="model-info">
+                        <div class="info-section">
+                            <h3>Basic Information</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <label>Name:</label>
+                                    <span id="modal-name"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Status:</label>
+                                    <span id="modal-status" class="status-badge"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Format:</label>
+                                    <span id="modal-format"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Created:</label>
+                                    <span id="modal-created"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Last Used:</label>
+                                    <span id="modal-last-used"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>File Size:</label>
+                                    <span id="modal-file-size"></span>
+                                </div>
+                            </div>
+                            <div class="info-item full-width">
+                                <label>Description:</label>
+                                <p id="modal-description"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h3>API Endpoint</h3>
+                            <div class="endpoint-info">
+                                <div class="endpoint-url">
+                                    <input type="text" id="modal-endpoint" readonly>
+                                    <button id="modal-copy-endpoint" class="btn btn-outline">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h3>Usage Statistics</h3>
+                            <div class="stats-row">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="modal-request-count">0</span>
+                                    <span class="stat-label">Total Requests</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="modal-avg-response">0ms</span>
+                                    <span class="stat-label">Avg Response Time</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="modal-success-rate">0%</span>
+                                    <span class="stat-label">Success Rate</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="test-model" class="btn btn-primary">
+                        <i class="fas fa-play"></i>
+                        Test Model
+                    </button>
+                    <button id="edit-model" class="btn btn-outline">
+                        <i class="fas fa-edit"></i>
+                        Edit
+                    </button>
+                    <button id="delete-model" class="btn btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script src="js/api.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/utils.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/event-manager.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/model-interaction-handler.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/analytics.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/dashboard.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/upload.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/models.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/app.js" nonce="{{CSP_NONCE}}"></script>
+    <script src="js/app-initializer.js" nonce="{{CSP_NONCE}}"></script>
+</body>
+</html>

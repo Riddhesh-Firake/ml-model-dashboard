@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Testing App Constructor Fix</h1>
+    <div id="results"></div>
+
+    <!-- Include required scripts -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        // Mock the required global functions and elements
+        window.showToast = function(message, type) {
+            console.log(`Toast: ${message} (${type})`);
+        };
+
+        window.isAuthenticated = function() {
+            return false; // For testing
+        };
+
+        // Create mock DOM elements
+        const mockElements = {
+            'user-email': document.createElement('span'),
+            'logout-btn': document.createElement('button'),
+            'test-registration-btn': document.createElement('button'),
+            'test-login-btn': document.createElement('button')
+        };
+
+        // Mock getElementById
+        const originalGetElementById = document.getElementById;
+        document.getElementById = function(id) {
+            return mockElements[id] || originalGetElementById.call(document, id);
+        };
+
+        // Mock classes
+        window.Dashboard = class Dashboard {
+            async init() { console.log('Dashboard init'); }
+            destroy() { console.log('Dashboard destroy'); }
+        };
+
+        window.Upload = class Upload {
+            init() { console.log('Upload init'); }
+        };
+
+        window.Models = class Models {
+            async init() { console.log('Models init'); }
+            async showModelDetails(id) { console.log('Show model details:', id); }
+        };
+    </script>
+    <script src="/js/app.js"></script>
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        try {
+            console.log('🧪 Testing App constructor...');
+            
+            // Try to create an App instance
+            const app = new App();
+            
+            console.log('✅ App constructor succeeded!');
+            console.log('App instance:', app);
+            console.log('App methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(app)));
+            
+            resultsDiv.innerHTML = `
+                <div class="result success">
+                    <h3>✅ Success!</h3>
+                    <p>App constructor completed without errors.</p>
+                    <p><strong>Current page:</strong> ${app.currentPage}</p>
+                    <p><strong>Initialized:</strong> ${app.initialized}</p>
+                    <p><strong>Methods bound successfully:</strong></p>
+                    <ul>
+                        <li>handleLogin: ${typeof app.handleLogin}</li>
+                        <li>handleRegister: ${typeof app.handleRegister}</li>
+                        <li>logout: ${typeof app.logout}</li>
+                        <li>showPage: ${typeof app.showPage}</li>
+                        <li>refresh: ${typeof app.refresh}</li>
+                        <li>showModelDetails: ${typeof app.showModelDetails}</li>
+                        <li>handleInitialLoad: ${typeof app.handleInitialLoad}</li>
+                    </ul>
+                </div>
+            `;
+            
+        } catch (error) {
+            console.error('❌ App constructor failed:', error);
+            
+            resultsDiv.innerHTML = `
+                <div class="result error">
+                    <h3>❌ Error!</h3>
+                    <p><strong>Error message:</strong> ${error.message}</p>
+                    <p><strong>Stack trace:</strong></p>
+                    <pre>${error.stack}</pre>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

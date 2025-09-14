@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Fix Test</title>
+</head>
+<body>
+    <h1>Testing API Fix</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPIs() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing APIs...</p>';
+            
+            const tests = [
+                { name: 'Models API', url: '/api/models' },
+                { name: 'User Stats API', url: '/api/monitoring/user/stats' },
+                { name: 'Test API', url: '/api/test' }
+            ];
+            
+            let html = '<h2>API Test Results:</h2>';
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const contentType = response.headers.get('content-type');
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        html += `
+                            <div style="border: 2px solid green; padding: 10px; margin: 10px 0;">
+                                <h3>✅ ${test.name}</h3>
+                                <p><strong>Status:</strong> ${response.status}</p>
+                                <p><strong>Content-Type:</strong> ${contentType}</p>
+                                <p><strong>Data Type:</strong> ${Array.isArray(data) ? 'Array' : typeof data}</p>
+                                <p><strong>Sample:</strong> ${JSON.stringify(data).substring(0, 100)}...</p>
+                            </div>
+                        `;
+                    } else {
+                        const text = await response.text();
+                        html += `
+                            <div style="border: 2px solid red; padding: 10px; margin: 10px 0;">
+                                <h3>❌ ${test.name}</h3>
+                                <p><strong>Status:</strong> ${response.status}</p>
+                                <p><strong>Content-Type:</strong> ${contentType}</p>
+                                <p><strong>Is HTML:</strong> ${text.includes('<!DOCTYPE html>')}</p>
+                                <p><strong>Preview:</strong> ${text.substring(0, 100)}...</p>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    html += `
+                        <div style="border: 2px solid orange; padding: 10px; margin: 10px 0;">
+                            <h3>⚠️ ${test.name}</h3>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        // Run test when page loads
+        testAPIs();
+    </script>
+</body>
+</html>

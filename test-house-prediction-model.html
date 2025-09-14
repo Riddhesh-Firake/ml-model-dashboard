@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Prediction Model Tester</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            background: #fafafa;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        
+        button { 
+            margin: 5px; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 14px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; color: white; }
+        
+        .form-group { 
+            margin: 15px 0; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold;
+        }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-size: 14px;
+        }
+        
+        .prediction-result {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .test-cases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .test-case {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .test-case h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        
+        .feature-list li {
+            padding: 3px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .price-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2e7d32;
+            text-align: center;
+            padding: 10px;
+            background: #f1f8e9;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .model-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 House Prediction Model Tester</h1>
+        <p>Test your uploaded house price prediction model with various scenarios and custom inputs.</p>
+
+        <!-- Model Selection -->
+        <div class="test-section info">
+            <h3>📋 Step 1: Select Your Model</h3>
+            <div class="form-group">
+                <label for="model-select">Choose your house prediction model:</label>
+                <select id="model-select">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="loadModels()">🔄 Refresh Models</button>
+            <div id="model-info"></div>
+        </div>
+
+        <!-- Predefined Test Cases -->
+        <div class="test-section">
+            <h3>🧪 Step 2: Run Predefined Test Cases</h3>
+            <p>Test your model with common house configurations:</p>
+            <button class="btn-success" onclick="runAllTestCases()">🚀 Run All Test Cases</button>
+            <button class="btn-warning" onclick="clearResults()">🗑️ Clear Results</button>
+            
+            <div id="test-cases-results"></div>
+        </div>
+
+        <!-- Custom Prediction -->
+        <div class="test-section">
+            <h3>🎯 Step 3: Custom House Prediction</h3>
+            <p>Enter your own house details to get a price prediction:</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="form-group">
+                    <label for="bedrooms">🛏️ Bedrooms:</label>
+                    <input type="number" id="bedrooms" min="1" max="10" value="3" placeholder="Number of bedrooms">
+                </div>
+                <div class="form-group">
+                    <label for="bathrooms">🚿 Bathrooms:</label>
+                    <input type="number" id="bathrooms" min="1" max="5" step="0.5" value="2" placeholder="Number of bathrooms">
+                </div>
+                <div class="form-group">
+                    <label for="sqft">📐 Square Feet:</label>
+                    <input type="number" id="sqft" min="500" max="10000" value="1500" placeholder="Square footage">
+                </div>
+                <div class="form-group">
+                    <label for="age">📅 Age (years):</label>
+                    <input type="number" id="age" min="0" max="100" value="10" placeholder="Age in years">
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="makePrediction()">💰 Predict House Price</button>
+            <div id="custom-prediction-result"></div>
+        </div>
+
+        <!-- API Testing -->
+        <div class="test-section">
+            <h3>🔌 Step 4: API Testing</h3>
+            <p>Test the model via direct API calls:</p>
+            <button class="btn-primary" onclick="testApiEndpoint()">📡 Test API Endpoint</button>
+            <button class="btn-warning" onclick="generateCurlCommand()">📋 Generate cURL Command</button>
+            <div id="api-test-results"></div>
+        </div>
+
+        <!-- Performance Testing -->
+        <div class="test-section">
+            <h3>⚡ Step 5: Performance Testing</h3>
+            <p>Test model response times and reliability:</p>
+            <button class="btn-primary" onclick="runPerformanceTest()">🏃‍♂️ Run Performance Test</button>
+            <div id="performance-results"></div>
+        </div>
+    </div>
+
+    <!-- Include API client -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    
+    <script>
+        let selectedModel = null;
+        let apiClient = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing house prediction tester...');
+            
+            // Check if ApiClient is available
+            if (typeof ApiClient === 'undefined') {
+                console.error('❌ ApiClient not found');
+                document.getElementById('model-info').innerHTML = `
+                    <div class="error">
+                        <h4>❌ API Client Not Found</h4>
+                        <p>The ApiClient class is not loaded. Please check if api.js is accessible.</p>
+                        <p><a href="debug-model-loading.html">🔍 Open Debug Tool</a></p>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                apiClient = new ApiClient();
+                console.log('✅ ApiClient created:', apiClient);
+                loadModels();
+            } catch (error) {
+                console.error('❌ Failed to create ApiClient:', error);
+                document.getElementById('model-info').innerHTML = `
+                    <div class="error">
+                        <h4>❌ Failed to Initialize API Client</h4>
+                        <p>${error.message}</p>
+                        <p><a href="debug-model-loading.html">🔍 Open Debug Tool</a></p>
+                    </div>
+                `;
+            }
+        });
+
+        // Predefined test cases for house prediction
+        const testCases = [
+            {
+                name: "🏠 Small Starter Home",
+                description: "Perfect for first-time buyers",
+                features: [2, 1, 900, 25],
+                expected_range: [150000, 250000]
+            },
+            {
+                name: "🏡 Average Family Home", 
+                description: "Typical suburban family house",
+                features: [3, 2, 1500, 10],
+                expected_range: [250000, 400000]
+            },
+            {
+                name: "🏰 Large Luxury Home",
+                description: "Spacious high-end property",
+                features: [5, 3, 3500, 5],
+                expected_range: [500000, 800000]
+            },
+            {
+                name: "🏚️ Older Compact Home",
+                description: "Older home needing updates",
+                features: [2, 1, 1000, 40],
+                expected_range: [120000, 200000]
+            },
+            {
+                name: "🏢 New Modern Home",
+                description: "Recently built contemporary house",
+                features: [4, 3, 2500, 2],
+                expected_range: [400000, 600000]
+            }
+        ];
+
+        async function loadModels() {
+            const select = document.getElementById('model-select');
+            const infoDiv = document.getElementById('model-info');
+            
+            try {
+                console.log('🔄 Loading models...');
+                select.innerHTML = '<option value="">Loading models...</option>';
+                
+                if (!apiClient) {
+                    throw new Error('API client not initialized');
+                }
+                
+                console.log('📡 Making API call to get models...');
+                const models = await apiClient.getModels();
+                console.log('📋 Loaded models:', models);
+                console.log('📊 Models count:', models.length);
+                console.log('📊 Models type:', typeof models, Array.isArray(models));
+                
+                select.innerHTML = '<option value="">Select a model...</option>';
+                
+                // Filter for house prediction models or show all
+                const houseModels = models.filter(model => 
+                    model.name.toLowerCase().includes('house') || 
+                    model.name.toLowerCase().includes('price') ||
+                    model.description.toLowerCase().includes('house') ||
+                    model.description.toLowerCase().includes('price')
+                );
+                
+                const modelsToShow = houseModels.length > 0 ? houseModels : models;
+                
+                modelsToShow.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = `${model.name} (${model.format})`;
+                    select.appendChild(option);
+                });
+                
+                if (modelsToShow.length === 0) {
+                    infoDiv.innerHTML = `
+                        <div class="warning">
+                            <h4>⚠️ No Models Found</h4>
+                            <p>No models are available. Please upload your house prediction model first.</p>
+                        </div>
+                    `;
+                } else {
+                    infoDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Found ${modelsToShow.length} Model(s)</h4>
+                            <p>Select a model above to start testing.</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('❌ Failed to load models:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    status: error.status,
+                    stack: error.stack
+                });
+                
+                select.innerHTML = '<option value="">Failed to load models</option>';
+                infoDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error Loading Models</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Status:</strong> ${error.status || 'Unknown'}</p>
+                        <p><strong>Possible causes:</strong></p>
+                        <ul>
+                            <li>Server not running on http://localhost:3000</li>
+                            <li>API endpoint not accessible</li>
+                            <li>CORS or network issues</li>
+                            <li>Authentication required</li>
+                        </ul>
+                        <p><a href="debug-model-loading.html" target="_blank">🔍 Open Debug Tool</a></p>
+                        <button onclick="testDirectFetch()">🧪 Test Direct Fetch</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Handle model selection
+        document.getElementById('model-select').addEventListener('change', async function(e) {
+            const modelId = e.target.value;
+            const infoDiv = document.getElementById('model-info');
+            
+            if (!modelId) {
+                selectedModel = null;
+                return;
+            }
+            
+            try {
+                infoDiv.innerHTML = '<div class="loading"></div> Loading model details...';
+                
+                const model = await apiClient.getModel(modelId);
+                selectedModel = model;
+                
+                infoDiv.innerHTML = `
+                    <div class="model-info">
+                        <h4>📊 Selected Model: ${model.name}</h4>
+                        <p><strong>Description:</strong> ${model.description || 'No description'}</p>
+                        <p><strong>Format:</strong> ${model.format}</p>
+                        <p><strong>Status:</strong> <span class="status-${model.status}">${model.status}</span></p>
+                        <p><strong>Created:</strong> ${new Date(model.createdAt).toLocaleDateString()}</p>
+                        <p><strong>File Size:</strong> ${formatFileSize(model.fileSize || 0)}</p>
+                        <p><strong>API Endpoint:</strong> <code>/api/predict/${model.id}</code></p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Failed to load model details:', error);
+                infoDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error Loading Model Details</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        async function runAllTestCases() {
+            if (!selectedModel) {
+                alert('Please select a model first!');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('test-cases-results');
+            resultsDiv.innerHTML = '<div class="loading"></div> Running test cases...';
+            
+            try {
+                let resultsHtml = '<div class="test-cases">';
+                
+                for (let i = 0; i < testCases.length; i++) {
+                    const testCase = testCases[i];
+                    
+                    try {
+                        const prediction = await makePredictionRequest(testCase.features);
+                        const price = prediction.prediction || prediction.result || prediction;
+                        const isInRange = price >= testCase.expected_range[0] && price <= testCase.expected_range[1];
+                        
+                        resultsHtml += `
+                            <div class="test-case ${isInRange ? 'success' : 'warning'}">
+                                <h4>${testCase.name}</h4>
+                                <p>${testCase.description}</p>
+                                <ul class="feature-list">
+                                    <li>🛏️ Bedrooms: ${testCase.features[0]}</li>
+                                    <li>🚿 Bathrooms: ${testCase.features[1]}</li>
+                                    <li>📐 Square Feet: ${testCase.features[2].toLocaleString()}</li>
+                                    <li>📅 Age: ${testCase.features[3]} years</li>
+                                </ul>
+                                <div class="price-display">
+                                    💰 $${typeof price === 'number' ? price.toLocaleString() : price}
+                                </div>
+                                <p><strong>Expected Range:</strong> $${testCase.expected_range[0].toLocaleString()} - $${testCase.expected_range[1].toLocaleString()}</p>
+                                <p><strong>Status:</strong> ${isInRange ? '✅ Within expected range' : '⚠️ Outside expected range'}</p>
+                            </div>
+                        `;
+                        
+                    } catch (error) {
+                        resultsHtml += `
+                            <div class="test-case error">
+                                <h4>${testCase.name}</h4>
+                                <p>❌ <strong>Error:</strong> ${error.message}</p>
+                            </div>
+                        `;
+                    }
+                }
+                
+                resultsHtml += '</div>';
+                resultsDiv.innerHTML = resultsHtml;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function makePrediction() {
+            if (!selectedModel) {
+                alert('Please select a model first!');
+                return;
+            }
+            
+            const bedrooms = parseInt(document.getElementById('bedrooms').value);
+            const bathrooms = parseFloat(document.getElementById('bathrooms').value);
+            const sqft = parseInt(document.getElementById('sqft').value);
+            const age = parseInt(document.getElementById('age').value);
+            
+            const features = [bedrooms, bathrooms, sqft, age];
+            const resultDiv = document.getElementById('custom-prediction-result');
+            
+            try {
+                resultDiv.innerHTML = '<div class="loading"></div> Making prediction...';
+                
+                const prediction = await makePredictionRequest(features);
+                const price = prediction.prediction || prediction.result || prediction;
+                
+                resultDiv.innerHTML = `
+                    <div class="prediction-result">
+                        <h4>🏠 Your House Prediction</h4>
+                        <ul class="feature-list">
+                            <li>🛏️ Bedrooms: ${bedrooms}</li>
+                            <li>🚿 Bathrooms: ${bathrooms}</li>
+                            <li>📐 Square Feet: ${sqft.toLocaleString()}</li>
+                            <li>📅 Age: ${age} years</li>
+                        </ul>
+                        <div class="price-display">
+                            💰 Predicted Price: $${typeof price === 'number' ? price.toLocaleString() : price}
+                        </div>
+                        <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Prediction Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function makePredictionRequest(features) {
+            // Try different input formats that the model might expect
+            const inputFormats = [
+                { features: features },
+                { input: features },
+                { data: features },
+                features,
+                { 
+                    bedrooms: features[0], 
+                    bathrooms: features[1], 
+                    sqft: features[2], 
+                    age: features[3] 
+                }
+            ];
+            
+            let lastError = null;
+            
+            for (const inputFormat of inputFormats) {
+                try {
+                    console.log('Trying input format:', inputFormat);
+                    const result = await apiClient.predict(selectedModel.id, inputFormat);
+                    console.log('Prediction result:', result);
+                    return result;
+                } catch (error) {
+                    console.log('Input format failed:', inputFormat, error.message);
+                    lastError = error;
+                    continue;
+                }
+            }
+            
+            throw lastError || new Error('All input formats failed');
+        }
+
+        async function testApiEndpoint() {
+            if (!selectedModel) {
+                alert('Please select a model first!');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('api-test-results');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing API endpoint...';
+            
+            try {
+                const testFeatures = [3, 2, 1500, 10]; // Average house
+                const startTime = Date.now();
+                
+                const result = await makePredictionRequest(testFeatures);
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ API Test Successful</h4>
+                        <p><strong>Endpoint:</strong> <code>/api/predict/${selectedModel.id}</code></p>
+                        <p><strong>Response Time:</strong> ${responseTime}ms</p>
+                        <p><strong>Test Input:</strong> [3 bed, 2 bath, 1500 sqft, 10 years old]</p>
+                        <p><strong>Result:</strong> ${JSON.stringify(result, null, 2)}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ API Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Status:</strong> ${error.status || 'Unknown'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function generateCurlCommand() {
+            if (!selectedModel) {
+                alert('Please select a model first!');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('api-test-results');
+            const testInput = { features: [3, 2, 1500, 10] };
+            
+            const curlCommand = `curl -X POST http://localhost:3000/api/predict/${selectedModel.id} \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -d '${JSON.stringify(testInput)}'`;
+            
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <h4>📋 cURL Command</h4>
+                    <p>Copy and paste this command to test your model from the command line:</p>
+                    <pre>${curlCommand}</pre>
+                    <button onclick="copyToClipboard('${curlCommand.replace(/'/g, "\\'")}')">📋 Copy Command</button>
+                </div>
+            `;
+        }
+
+        async function runPerformanceTest() {
+            if (!selectedModel) {
+                alert('Please select a model first!');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('performance-results');
+            resultDiv.innerHTML = '<div class="loading"></div> Running performance test...';
+            
+            const testCount = 10;
+            const testFeatures = [3, 2, 1500, 10];
+            const results = [];
+            
+            try {
+                for (let i = 0; i < testCount; i++) {
+                    const startTime = Date.now();
+                    await makePredictionRequest(testFeatures);
+                    const endTime = Date.now();
+                    results.push(endTime - startTime);
+                }
+                
+                const avgTime = results.reduce((a, b) => a + b, 0) / results.length;
+                const minTime = Math.min(...results);
+                const maxTime = Math.max(...results);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>⚡ Performance Test Results</h4>
+                        <p><strong>Test Count:</strong> ${testCount} predictions</p>
+                        <p><strong>Average Response Time:</strong> ${avgTime.toFixed(2)}ms</p>
+                        <p><strong>Fastest Response:</strong> ${minTime}ms</p>
+                        <p><strong>Slowest Response:</strong> ${maxTime}ms</p>
+                        <p><strong>Success Rate:</strong> 100%</p>
+                        <p><strong>Throughput:</strong> ${(1000 / avgTime).toFixed(2)} predictions/second</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Performance Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('test-cases-results').innerHTML = '';
+            document.getElementById('custom-prediction-result').innerHTML = '';
+            document.getElementById('api-test-results').innerHTML = '';
+            document.getElementById('performance-results').innerHTML = '';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Direct fetch test for debugging
+        async function testDirectFetch() {
+            const infoDiv = document.getElementById('model-info');
+            
+            try {
+                console.log('🧪 Testing direct fetch...');
+                infoDiv.innerHTML += '<p>🔄 Testing direct fetch...</p>';
+                
+                const response = await fetch('/api/models');
+                console.log('📡 Direct fetch response:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('📋 Direct fetch data:', data);
+                
+                infoDiv.innerHTML += `
+                    <div class="success">
+                        <h4>✅ Direct Fetch Successful</h4>
+                        <p>Found ${data.length} models via direct fetch</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+                
+                // Try to populate the select with the data
+                const select = document.getElementById('model-select');
+                select.innerHTML = '<option value="">Select a model...</option>';
+                
+                data.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = `${model.name} (${model.format})`;
+                    select.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('❌ Direct fetch failed:', error);
+                infoDiv.innerHTML += `
+                    <div class="error">
+                        <h4>❌ Direct Fetch Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Utility function for file size formatting
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

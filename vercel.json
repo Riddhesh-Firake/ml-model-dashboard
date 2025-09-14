@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "name": "ml-model-dashboard",
+  "builds": [
+    {
+      "src": "src/app.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["public/**"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "src/app.ts"
+    },
+    {
+      "src": "/health",
+      "dest": "src/app.ts"
+    },
+    {
+      "src": "/docs/(.*)",
+      "dest": "src/app.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "public/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "src/app.ts": {
+      "maxDuration": 30
+    }
+  },
+  "outputDirectory": "dist"
+}

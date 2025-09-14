@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .step { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Frontend Fix Test</h1>
+    <p>Testing the frontend fixes for the ML Model Dashboard.</p>
+
+    <div id="test-results">
+        <div class="step info">
+            <h3>Step 1: Clear Cache and Add Sample Data</h3>
+            <p>First, we need to clear the browser cache and add sample data.</p>
+            <button onclick="clearCacheAndAddData()">Clear Cache & Add Sample Data</button>
+        </div>
+
+        <div class="step info">
+            <h3>Step 2: Test API Client</h3>
+            <p>Test if the API client can load models and stats.</p>
+            <button onclick="testApiClient()">Test API Client</button>
+            <div id="api-test-results"></div>
+        </div>
+
+        <div class="step info">
+            <h3>Step 3: Test Dashboard</h3>
+            <p>Navigate to the main dashboard to see if data loads correctly.</p>
+            <a href="/" target="_blank">Open Dashboard</a>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/utils.js"></script>
+    <script>
+        function clearCacheAndAddData() {
+            // Clear cache
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Add sample data
+            const sampleModels = [
+                {
+                    id: 'model-1',
+                    name: 'Customer Churn Predictor',
+                    description: 'Predicts customer churn based on usage patterns and demographics',
+                    format: 'pkl',
+                    status: 'active',
+                    fileSize: 2048576,
+                    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    lastUsed: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                    requestCount: 1247,
+                    successfulRequests: 1198,
+                    avgResponseTime: 145,
+                    endpointUrl: 'http://localhost:3000/api/predict/model-1'
+                },
+                {
+                    id: 'model-2',
+                    name: 'Sales Forecasting Model',
+                    description: 'Time series forecasting model for monthly sales predictions',
+                    format: 'h5',
+                    status: 'active',
+                    fileSize: 5242880,
+                    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+                    lastUsed: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                    requestCount: 892,
+                    successfulRequests: 876,
+                    avgResponseTime: 234,
+                    endpointUrl: 'http://localhost:3000/api/predict/model-2'
+                }
+            ];
+
+            const sampleUserStats = {
+                totalRequests: 2139,
+                avgResponseTime: 189,
+                successfulRequests: 2074,
+                errorCount: 65
+            };
+
+            localStorage.setItem('sample_models', JSON.stringify(sampleModels));
+            localStorage.setItem('sample_user_stats', JSON.stringify(sampleUserStats));
+
+            alert('✅ Cache cleared and sample data added!');
+        }
+
+        async function testApiClient() {
+            const resultsDiv = document.getElementById('api-test-results');
+            resultsDiv.innerHTML = '<p>Testing API client...</p>';
+
+            try {
+                // Create API client
+                const apiClient = new ApiClient();
+                
+                // Test models endpoint
+                const models = await apiClient.getModels();
+                console.log('Models:', models);
+                
+                // Test user stats endpoint
+                const stats = await apiClient.getUserStats();
+                console.log('Stats:', stats);
+
+                resultsDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ API Client Test Successful!</h4>
+                        <p><strong>Models loaded:</strong> ${models.length}</p>
+                        <p><strong>Total requests:</strong> ${stats.totalRequests}</p>
+                        <p><strong>Avg response time:</strong> ${stats.avgResponseTime}ms</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('API test failed:', error);
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ API Client Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

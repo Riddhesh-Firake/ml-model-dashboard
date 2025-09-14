@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Response Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                console.log('Testing /api/models...');
+                const response = await fetch('/api/models', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    console.log('JSON data:', data);
+                    console.log('Is array:', Array.isArray(data));
+                    
+                    results.innerHTML = `
+                        <h2>✅ Success - JSON Response</h2>
+                        <p><strong>Type:</strong> ${Array.isArray(data) ? 'Array' : typeof data}</p>
+                        <p><strong>Length:</strong> ${data.length || 'N/A'}</p>
+                        <p><strong>Data:</strong> ${JSON.stringify(data, null, 2)}</p>
+                    `;
+                } else {
+                    const text = await response.text();
+                    console.log('Text data (first 200 chars):', text.substring(0, 200));
+                    
+                    results.innerHTML = `
+                        <h2>❌ Error - Non-JSON Response</h2>
+                        <p><strong>Content-Type:</strong> ${contentType}</p>
+                        <p><strong>Is HTML:</strong> ${text.includes('<!DOCTYPE html>')}</p>
+                        <p><strong>Preview:</strong> ${text.substring(0, 200)}...</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Test failed:', error);
+                results.innerHTML = `
+                    <h2>❌ Error</h2>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        // Run test when page loads
+        testAPI();
+    </script>
+</body>
+</html>

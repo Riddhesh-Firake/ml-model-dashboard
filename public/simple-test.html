@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple API Test</title>
+</head>
+<body>
+    <h1>Simple API Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                // Test multiple endpoints
+                const tests = [
+                    '/api/test',
+                    '/api/models', 
+                    '/api/monitoring/user/stats',
+                    '/api/auth/register'
+                ];
+                
+                let html = '<h2>Results:</h2>';
+                
+                for (const endpoint of tests) {
+                    try {
+                        const response = await fetch(endpoint + '?_=' + Date.now(), {
+                            method: endpoint.includes('register') ? 'POST' : 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Cache-Control': 'no-cache'
+                            },
+                            body: endpoint.includes('register') ? JSON.stringify({
+                                email: 'test@test.com',
+                                password: 'test123'
+                            }) : undefined
+                        });
+                        
+                        const contentType = response.headers.get('content-type');
+                        const isJson = contentType && contentType.includes('application/json');
+                        
+                        html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid ${isJson ? 'green' : 'red'};">`;
+                        html += `<strong>${endpoint}</strong><br>`;
+                        html += `Status: ${response.status}<br>`;
+                        html += `Content-Type: ${contentType}<br>`;
+                        html += `Is JSON: ${isJson ? 'YES ✅' : 'NO ❌'}<br>`;
+                        
+                        if (isJson) {
+                            const data = await response.json();
+                            html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                        } else {
+                            const text = await response.text();
+                            html += `<pre>${text.substring(0, 200)}...</pre>`;
+                        }
+                        html += '</div>';
+                        
+                    } catch (error) {
+                        html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid red;">`;
+                        html += `<strong>${endpoint}</strong><br>`;
+                        html += `Error: ${error.message}`;
+                        html += '</div>';
+                    }
+                }
+                
+                result.innerHTML = html;
+                
+            } catch (error) {
+                result.innerHTML = 'Error: ' + error.message;
+            }
+        }
+        
+        // Auto-run test
+        window.onload = () => {
+            setTimeout(testAPI, 1000);
+        };
+    </script>
+</body>
+</html>

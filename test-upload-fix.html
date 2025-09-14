@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Test</title>
+</head>
+<body>
+    <h1>Upload Test</h1>
+    
+    <form id="test-upload-form">
+        <div>
+            <label for="modelName">Model Name:</label>
+            <input type="text" id="modelName" name="modelName" value="test-model" required>
+        </div>
+        <div>
+            <label for="modelFile">Model File:</label>
+            <input type="file" id="modelFile" name="modelFile" accept=".pkl,.joblib,.h5,.onnx,.pt,.pth" required>
+        </div>
+        <div>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description">Test model upload</textarea>
+        </div>
+        <button type="submit">Upload Model</button>
+    </form>
+    
+    <div id="upload-status"></div>
+    <div id="upload-progress" style="display: none;">
+        <div>Progress: <span id="progress-percent">0%</span></div>
+        <div>Status: <span id="progress-status">Preparing...</span></div>
+    </div>
+    
+    <script>
+        // Simple API client for testing
+        class TestApiClient {
+            constructor() {
+                this.baseUrl = window.location.origin;
+            }
+            
+            async uploadFile(endpoint, formData, onProgress = null) {
+                const url = `${this.baseUrl}${endpoint}`;
+
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+
+                    // Open request first
+                    xhr.open('POST', url);
+                    
+                    // Set timeout
+                    xhr.timeout = 300000; // 5 minutes timeout for uploads
+
+                    // Set up progress tracking
+                    if (onProgress) {
+                        xhr.upload.addEventListener('progress', (event) => {
+                            if (event.lengthComputable) {
+                                const percentComplete = (event.loaded / event.total) * 100;
+                                onProgress(percentComplete, event.loaded, event.total);
+                            }
+                        });
+                    }
+
+                    // Set up response handling
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                resolve(response);
+                            } catch (error) {
+                                resolve(xhr.responseText);
+                            }
+                        } else {
+                            try {
+                                const errorData = JSON.parse(xhr.responseText);
+                                reject(new Error(errorData.error?.message || `HTTP ${xhr.status}: ${xhr.statusText}`));
+                            } catch (error) {
+                                reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                            }
+                        }
+                    });
+
+                    xhr.addEventListener('error', () => {
+                        reject(new Error('Network error occurred'));
+                    });
+
+                    xhr.addEventListener('timeout', () => {
+                        reject(new Error('Request timeout'));
+                    });
+
+                    // Send request
+                    xhr.send(formData);
+                });
+            }
+        }
+        
+        const apiClient = new TestApiClient();
+        
+        document.getElementById('test-upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const statusDiv = document.getElementById('upload-status');
+            const progressDiv = document.getElementById('upload-progress');
+            const progressPercent = document.getElementById('progress-percent');
+            const progressStatus = document.getElementById('progress-status');
+            
+            try {
+                statusDiv.innerHTML = '<p style="color: blue;">Starting upload...</p>';
+                progressDiv.style.display = 'block';
+                
+                const result = await apiClient.uploadFile('/api/models/upload', formData, (percent, loaded, total) => {
+                    progressPercent.textContent = `${Math.round(percent)}%`;
+                    progressStatus.textContent = `Uploading... ${Math.round(loaded/1024)}KB of ${Math.round(total/1024)}KB`;
+                });
+                
+                statusDiv.innerHTML = `<p style="color: green;">Upload successful!</p><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                progressDiv.style.display = 'none';
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<p style="color: red;">Upload failed: ${error.message}</p>`;
+                progressDiv.style.display = 'none';
+                console.error('Upload error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

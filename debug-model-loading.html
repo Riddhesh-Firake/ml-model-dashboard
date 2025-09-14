@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Model Loading</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { margin: 5px; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer; background: #007bff; color: white; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; font-size: 12px; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Model Loading</h1>
+    <p>This tool will help diagnose why models are not loading in the test page.</p>
+
+    <div class="test-section info">
+        <h3>Step 1: Test Direct API Call</h3>
+        <p>Test the /api/models endpoint directly using fetch:</p>
+        <button onclick="testDirectAPI()">Test Direct API</button>
+        <div id="direct-api-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 2: Test API Client</h3>
+        <p>Test using the ApiClient class:</p>
+        <button onclick="testApiClient()">Test API Client</button>
+        <div id="api-client-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 3: Test CORS and Headers</h3>
+        <p>Check for CORS issues and response headers:</p>
+        <button onclick="testCORS()">Test CORS</button>
+        <div id="cors-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 4: Test Model Details</h3>
+        <p>If models load, test getting individual model details:</p>
+        <button onclick="testModelDetails()">Test Model Details</button>
+        <div id="model-details-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 5: Test Prediction</h3>
+        <p>Test making a prediction with your house model:</p>
+        <button onclick="testPrediction()">Test Prediction</button>
+        <div id="prediction-result"></div>
+    </div>
+
+    <!-- Include API client -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+
+    <script>
+        let foundModels = [];
+        let houseModel = null;
+
+        async function testDirectAPI() {
+            const resultDiv = document.getElementById('direct-api-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing direct API call...';
+
+            try {
+                console.log('🔍 Testing direct fetch to /api/models');
+                
+                const response = await fetch('/api/models', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response headers:', [...response.headers.entries()]);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('📋 Response data:', data);
+
+                foundModels = data;
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Direct API Call Successful</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Models found:</strong> ${data.length}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+
+                // Look for house model
+                houseModel = data.find(model => 
+                    model.name.toLowerCase().includes('house') || 
+                    model.name.toLowerCase().includes('price')
+                );
+
+                if (houseModel) {
+                    resultDiv.innerHTML += `
+                        <div class="info">
+                            <h4>🏠 House Model Found</h4>
+                            <p><strong>Name:</strong> ${houseModel.name}</p>
+                            <p><strong>ID:</strong> ${houseModel.id}</p>
+                            <p><strong>Format:</strong> ${houseModel.format}</p>
+                            <p><strong>Status:</strong> ${houseModel.status}</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('❌ Direct API test failed:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Direct API Call Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Check:</strong> Is the server running on http://localhost:3000?</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testApiClient() {
+            const resultDiv = document.getElementById('api-client-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing API Client...';
+
+            try {
+                console.log('🔍 Testing ApiClient.getModels()');
+                
+                // Check if ApiClient is available
+                if (typeof ApiClient === 'undefined') {
+                    throw new Error('ApiClient class is not defined. Check if api.js is loaded.');
+                }
+
+                const apiClient = new ApiClient();
+                console.log('📱 ApiClient instance:', apiClient);
+                console.log('📱 ApiClient methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(apiClient)));
+
+                const models = await apiClient.getModels();
+                console.log('📋 ApiClient result:', models);
+
+                foundModels = models;
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ API Client Test Successful</h4>
+                        <p><strong>Models found:</strong> ${models.length}</p>
+                        <p><strong>API Client type:</strong> ${typeof apiClient}</p>
+                        <pre>${JSON.stringify(models, null, 2)}</pre>
+                    </div>
+                `;
+
+                // Look for house model
+                houseModel = models.find(model => 
+                    model.name.toLowerCase().includes('house') || 
+                    model.name.toLowerCase().includes('price')
+                );
+
+                if (houseModel) {
+                    resultDiv.innerHTML += `
+                        <div class="info">
+                            <h4>🏠 House Model Found via API Client</h4>
+                            <p><strong>Name:</strong> ${houseModel.name}</p>
+                            <p><strong>ID:</strong> ${houseModel.id}</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('❌ API Client test failed:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ API Client Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Stack:</strong></p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('cors-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing CORS and headers...';
+
+            try {
+                console.log('🔍 Testing CORS and headers');
+                
+                const response = await fetch('/api/models', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': window.location.origin
+                    }
+                });
+
+                const headers = {};
+                for (const [key, value] of response.headers.entries()) {
+                    headers[key] = value;
+                }
+
+                console.log('📡 All response headers:', headers);
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ CORS Test Successful</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Origin:</strong> ${window.location.origin}</p>
+                        <p><strong>Response Headers:</strong></p>
+                        <pre>${JSON.stringify(headers, null, 2)}</pre>
+                    </div>
+                `;
+
+                // Check for CORS headers
+                const corsHeaders = [
+                    'access-control-allow-origin',
+                    'access-control-allow-methods',
+                    'access-control-allow-headers'
+                ];
+
+                const foundCorsHeaders = corsHeaders.filter(header => headers[header]);
+                
+                if (foundCorsHeaders.length > 0) {
+                    resultDiv.innerHTML += `
+                        <div class="info">
+                            <h4>🌐 CORS Headers Found</h4>
+                            <ul>
+                                ${foundCorsHeaders.map(header => `<li><strong>${header}:</strong> ${headers[header]}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML += `
+                        <div class="info">
+                            <h4>ℹ️ No explicit CORS headers found</h4>
+                            <p>This might be okay if the request is same-origin.</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('❌ CORS test failed:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ CORS Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testModelDetails() {
+            const resultDiv = document.getElementById('model-details-result');
+            
+            if (!houseModel) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ No House Model Available</h4>
+                        <p>Please run the previous tests first to find a house model.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="loading"></div> Testing model details...';
+
+            try {
+                console.log('🔍 Testing model details for:', houseModel.id);
+                
+                const apiClient = new ApiClient();
+                const modelDetails = await apiClient.getModel(houseModel.id);
+                
+                console.log('📋 Model details:', modelDetails);
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Model Details Retrieved</h4>
+                        <p><strong>Model ID:</strong> ${houseModel.id}</p>
+                        <pre>${JSON.stringify(modelDetails, null, 2)}</pre>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Model details test failed:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Model Details Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Model ID:</strong> ${houseModel.id}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testPrediction() {
+            const resultDiv = document.getElementById('prediction-result');
+            
+            if (!houseModel) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ No House Model Available</h4>
+                        <p>Please run the previous tests first to find a house model.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="loading"></div> Testing prediction...';
+
+            try {
+                console.log('🔍 Testing prediction with model:', houseModel.id);
+                
+                const apiClient = new ApiClient();
+                const testInput = { features: [3, 2, 1500, 10] }; // 3 bed, 2 bath, 1500 sqft, 10 years old
+                
+                console.log('📝 Test input:', testInput);
+                
+                const prediction = await apiClient.predict(houseModel.id, testInput);
+                
+                console.log('🎯 Prediction result:', prediction);
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Prediction Test Successful</h4>
+                        <p><strong>Model ID:</strong> ${houseModel.id}</p>
+                        <p><strong>Input:</strong> 3 bed, 2 bath, 1500 sqft, 10 years old</p>
+                        <p><strong>Prediction:</strong> $${typeof prediction.prediction === 'number' ? prediction.prediction.toLocaleString() : prediction.prediction}</p>
+                        <pre>${JSON.stringify(prediction, null, 2)}</pre>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Prediction test failed:', error);
+                
+                // Try alternative input formats
+                const alternativeFormats = [
+                    [3, 2, 1500, 10],
+                    { input: [3, 2, 1500, 10] },
+                    { data: [3, 2, 1500, 10] },
+                    { bedrooms: 3, bathrooms: 2, sqft: 1500, age: 10 }
+                ];
+
+                let successfulFormat = null;
+                
+                for (const format of alternativeFormats) {
+                    try {
+                        console.log('🔄 Trying alternative format:', format);
+                        const apiClient = new ApiClient();
+                        const result = await apiClient.predict(houseModel.id, format);
+                        successfulFormat = { format, result };
+                        break;
+                    } catch (altError) {
+                        console.log('❌ Alternative format failed:', format, altError.message);
+                    }
+                }
+
+                if (successfulFormat) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Prediction Successful (Alternative Format)</h4>
+                            <p><strong>Working format:</strong></p>
+                            <pre>${JSON.stringify(successfulFormat.format, null, 2)}</pre>
+                            <p><strong>Result:</strong></p>
+                            <pre>${JSON.stringify(successfulFormat.result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Prediction Test Failed</h4>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p><strong>Status:</strong> ${error.status || 'Unknown'}</p>
+                            <p>All input formats failed. The model might not be properly deployed.</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Auto-run first test when page loads
+        window.addEventListener('load', () => {
+            console.log('🚀 Auto-running direct API test...');
+            setTimeout(testDirectAPI, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard Test</title>
+    <link rel="stylesheet" href="public/styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background: #fafbfc;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .test-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .test-stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .test-stat-label {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-chart-line"></i> Analytics Dashboard Test</h1>
+            <p>Testing the new usage analytics implementation</p>
+            <button id="refresh-btn" class="btn btn-primary">
+                <i class="fas fa-sync"></i> Refresh Data
+            </button>
+        </div>
+
+        <div class="test-stats">
+            <div class="test-stat-card">
+                <div class="test-stat-value" id="total-models">0</div>
+                <div class="test-stat-label">Total Models</div>
+            </div>
+            <div class="test-stat-card">
+                <div class="test-stat-value" id="total-requests">0</div>
+                <div class="test-stat-label">Total Requests</div>
+            </div>
+            <div class="test-stat-card">
+                <div class="test-stat-value" id="avg-response-time">0ms</div>
+                <div class="test-stat-label">Avg Response Time</div>
+            </div>
+            <div class="test-stat-card">
+                <div class="test-stat-value" id="active-models">0</div>
+                <div class="test-stat-label">Active Models</div>
+            </div>
+        </div>
+
+        <div class="analytics-section">
+            <h2>Usage Analytics</h2>
+            <div class="analytics-tabs">
+                <button class="analytics-tab active" data-tab="requests">API Requests</button>
+                <button class="analytics-tab" data-tab="performance">Performance</button>
+                <button class="analytics-tab" data-tab="models">Model Usage</button>
+                <button class="analytics-tab" data-tab="errors">Error Rates</button>
+            </div>
+            
+            <div class="analytics-content">
+                <!-- API Requests Tab -->
+                <div id="requests-tab" class="analytics-tab-content active">
+                    <div class="chart-container">
+                        <canvas id="requests-chart" width="600" height="300"></canvas>
+                    </div>
+                    <div class="analytics-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Today</span>
+                            <span class="summary-value" id="requests-today">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">This Week</span>
+                            <span class="summary-value" id="requests-week">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Peak Hour</span>
+                            <span class="summary-value" id="requests-peak">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Tab -->
+                <div id="performance-tab" class="analytics-tab-content">
+                    <div class="chart-container">
+                        <canvas id="performance-chart" width="600" height="300"></canvas>
+                    </div>
+                    <div class="analytics-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Avg Response</span>
+                            <span class="summary-value" id="avg-response">0ms</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">P95 Response</span>
+                            <span class="summary-value" id="p95-response">0ms</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Throughput</span>
+                            <span class="summary-value" id="throughput">0/min</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Model Usage Tab -->
+                <div id="models-tab" class="analytics-tab-content">
+                    <div class="chart-container">
+                        <canvas id="models-chart" width="600" height="300"></canvas>
+                    </div>
+                    <div class="model-usage-list" id="model-usage-list">
+                        <!-- Model usage items will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Error Rates Tab -->
+                <div id="errors-tab" class="analytics-tab-content">
+                    <div class="chart-container">
+                        <canvas id="errors-chart" width="600" height="300"></canvas>
+                    </div>
+                    <div class="analytics-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Success Rate</span>
+                            <span class="summary-value" id="success-rate">0%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Error Rate</span>
+                            <span class="summary-value" id="error-rate">0%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Errors</span>
+                            <span class="summary-value" id="total-errors">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include required scripts -->
+    <script src="public/js/utils.js"></script>
+    <script>
+        // Mock API client for testing
+        window.apiClient = {
+            getUserStats: async () => ({
+                totalRequests: 2139,
+                avgResponseTime: 189,
+                successfulRequests: 2074,
+                errorCount: 65
+            }),
+            getModels: async () => [
+                {
+                    id: 'test-1',
+                    name: 'Customer Churn Predictor',
+                    description: 'Predicts customer churn',
+                    format: 'pkl',
+                    status: 'active',
+                    createdAt: new Date().toISOString(),
+                    requestCount: 1247,
+                    avgResponseTime: 145
+                },
+                {
+                    id: 'test-2',
+                    name: 'Sales Forecasting Model',
+                    description: 'Sales predictions',
+                    format: 'h5',
+                    status: 'active',
+                    createdAt: new Date().toISOString(),
+                    requestCount: 892,
+                    avgResponseTime: 234
+                }
+            ],
+            get: async (endpoint) => {
+                if (endpoint.includes('/performance')) {
+                    return {
+                        performance: {
+                            averageResponseTime: 189,
+                            p95ResponseTime: 345,
+                            throughput: 23.5
+                        }
+                    };
+                }
+                return {};
+            },
+            getSampleModels: () => [
+                {
+                    id: 'sample-1',
+                    name: 'Customer Churn Predictor',
+                    description: 'Predicts customer churn',
+                    format: 'pkl',
+                    status: 'active',
+                    createdAt: new Date().toISOString(),
+                    requestCount: 1247,
+                    avgResponseTime: 145
+                }
+            ]
+        };
+
+        // Mock functions
+        window.showLoading = (msg) => console.log('Loading:', msg);
+        window.hideLoading = () => console.log('Loading complete');
+        window.showToast = (msg, type) => console.log('Toast:', msg, type);
+        window.formatNumber = (num) => num.toLocaleString();
+        window.formatDuration = (ms) => ms + 'ms';
+    </script>
+    <script src="public/js/analytics.js"></script>
+    <script>
+        // Initialize analytics when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Initializing analytics test...');
+            
+            try {
+                const analytics = new AnalyticsService();
+                await analytics.init();
+                
+                // Update test stats
+                const userStats = await window.apiClient.getUserStats();
+                const models = await window.apiClient.getModels();
+                
+                document.getElementById('total-models').textContent = models.length;
+                document.getElementById('total-requests').textContent = formatNumber(userStats.totalRequests);
+                document.getElementById('avg-response-time').textContent = formatDuration(userStats.avgResponseTime);
+                document.getElementById('active-models').textContent = models.filter(m => m.status === 'active').length;
+                
+                // Refresh button
+                document.getElementById('refresh-btn').addEventListener('click', async () => {
+                    console.log('🔄 Refreshing analytics...');
+                    await analytics.refresh();
+                });
+                
+                console.log('✅ Analytics test initialized successfully');
+            } catch (error) {
+                console.error('❌ Failed to initialize analytics test:', error);
+            }
+        });
+    </script>
+</body>
+</html>

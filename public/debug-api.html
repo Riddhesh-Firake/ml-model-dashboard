@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Debug - No Cache</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; font-size: 12px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .cache-buster { font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>API Debug - Cache Buster</h1>
+    <p>This page adds cache-busting parameters to all requests to ensure fresh responses.</p>
+    
+    <button onclick="testAllEndpoints()">Test All API Endpoints (No Cache)</button>
+    <button onclick="testRegistration()">Test Registration</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div class="cache-buster">Cache buster: <span id="cacheBuster"></span></div>
+    
+    <div id="results"></div>
+
+    <script>
+        function getCacheBuster() {
+            return Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        document.getElementById('cacheBuster').textContent = getCacheBuster();
+        
+        async function testEndpoint(name, url, options = {}) {
+            const resultsDiv = document.getElementById('results');
+            const cacheBuster = getCacheBuster();
+            const separator = url.includes('?') ? '&' : '?';
+            const urlWithCacheBuster = `${url}${separator}_cb=${cacheBuster}`;
+            
+            try {
+                const fetchOptions = {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache',
+                        ...options.headers
+                    },
+                    ...options
+                };
+                
+                const response = await fetch(urlWithCacheBuster, fetchOptions);
+                const contentType = response.headers.get('content-type');
+                
+                let result = {
+                    name,
+                    url: urlWithCacheBuster,
+                    status: response.status,
+                    contentType,
+                    ok: response.ok
+                };
+                
+                if (contentType && contentType.includes('application/json')) {
+                    result.data = await response.json();
+                    result.isJson = true;
+                } else {
+                    const text = await response.text();
+                    result.data = text.substring(0, 300);
+                    result.isJson = false;
+                    result.isHtml = text.includes('<!DOCTYPE html>');
+                }
+                
+                displayResult(result);
+                return result;
+                
+            } catch (error) {
+                const result = {
+                    name,
+                    url: urlWithCacheBuster,
+                    error: error.message,
+                    failed: true
+                };
+                displayResult(result);
+                return result;
+            }
+        }
+        
+        function displayResult(result) {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            
+            let className = 'info';
+            if (result.failed) {
+                className = 'error';
+            } else if (result.ok && result.isJson) {
+                className = 'success';
+            } else if (result.isHtml) {
+                className = 'error';
+            }
+            
+            div.className = `test-result ${className}`;
+            
+            let html = `<h3>${result.name}</h3>`;
+            html += `<p><strong>URL:</strong> ${result.url}</p>`;
+            
+            if (result.failed) {
+                html += `<p><strong>Error:</strong> ${result.error}</p>`;
+            } else {
+                html += `<p><strong>Status:</strong> ${result.status}</p>`;
+                html += `<p><strong>Content-Type:</strong> ${result.contentType}</p>`;
+                html += `<p><strong>Is JSON:</strong> ${result.isJson ? '✅ Yes' : '❌ No'}</p>`;
+                
+                if (result.isHtml) {
+                    html += `<p><strong>⚠️ WARNING:</strong> Received HTML instead of JSON!</p>`;
+                }
+                
+                if (result.isJson) {
+                    html += `<pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+                } else {
+                    html += `<pre>${result.data}...</pre>`;
+                }
+            }
+            
+            div.innerHTML = html;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function testAllEndpoints() {
+            clearResults();
+            
+            const endpoints = [
+                { name: 'API Test', url: '/api/test' },
+                { name: 'Models List', url: '/api/models' },
+                { name: 'User Stats', url: '/api/monitoring/user/stats' },
+                { name: 'Health Check', url: '/health' },
+                { name: 'API Info', url: '/api' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint.name, endpoint.url);
+                // Small delay between requests
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        async function testRegistration() {
+            const testData = {
+                email: `test_${Date.now()}@example.com`,
+                password: 'testpassword123'
+            };
+            
+            await testEndpoint('Registration Test', '/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(testData)
+            });
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('cacheBuster').textContent = getCacheBuster();
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testAllEndpoints, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete App Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Complete App Fix Test</h1>
+    <p>Testing all the fixes for the ML Model Dashboard App class.</p>
+
+    <div class="test-section info">
+        <h3>Step 1: Load Sample Data</h3>
+        <p>First, let's add sample data to localStorage for testing.</p>
+        <button class="btn-primary" onclick="loadSampleData()">Load Sample Data</button>
+        <div id="sample-data-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 2: Test App Constructor</h3>
+        <p>Test if the App class can be instantiated without errors.</p>
+        <button class="btn-primary" onclick="testAppConstructor()">Test Constructor</button>
+        <div id="constructor-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 3: Test Method Bindings</h3>
+        <p>Verify that all methods are properly bound and callable.</p>
+        <button class="btn-primary" onclick="testMethodBindings()">Test Method Bindings</button>
+        <div id="bindings-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 4: Test App Initialization</h3>
+        <p>Test the full app initialization process.</p>
+        <button class="btn-primary" onclick="testAppInitialization()">Test Initialization</button>
+        <div id="init-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Step 5: Open Dashboard</h3>
+        <p>If all tests pass, open the main dashboard.</p>
+        <button class="btn-success" onclick="openDashboard()">Open Dashboard</button>
+    </div>
+
+    <!-- Include required scripts -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/upload.js"></script>
+    <script src="/js/models.js"></script>
+    <script>
+        // Global test app instance
+        let testApp = null;
+
+        // Mock required functions and elements
+        function setupMocks() {
+            // Mock toast function
+            window.showToast = function (message, type) {
+                console.log(`Toast: ${message} (${type})`);
+            };
+
+            window.showLoading = function (message) {
+                console.log(`Loading: ${message}`);
+            };
+
+            window.hideLoading = function () {
+                console.log('Loading hidden');
+            };
+
+            // Mock authentication
+            window.isAuthenticated = function () {
+                return localStorage.getItem('auth_token') !== null;
+            };
+
+            // Create mock DOM elements
+            const mockElements = {
+                'user-email': document.createElement('span'),
+                'logout-btn': document.createElement('button'),
+                'test-registration-btn': document.createElement('button'),
+                'test-login-btn': document.createElement('button'),
+                'total-models': document.createElement('span'),
+                'total-requests': document.createElement('span'),
+                'avg-response-time': document.createElement('span'),
+                'active-models': document.createElement('span'),
+                'recent-models-list': document.createElement('div'),
+                'usage-chart': document.createElement('canvas'),
+                'models-grid': document.createElement('div'),
+                'no-models': document.createElement('div'),
+                'search-models': document.createElement('input'),
+                'filter-status': document.createElement('select'),
+                'filter-format': document.createElement('select')
+            };
+
+            // Mock getElementById
+            const originalGetElementById = document.getElementById;
+            document.getElementById = function (id) {
+                return mockElements[id] || originalGetElementById.call(document, id);
+            };
+
+            // Mock classes
+            window.Dashboard = class Dashboard {
+                constructor() {
+                    this.stats = { totalModels: 0, totalRequests: 0, avgResponseTime: 0, activeModels: 0 };
+                    this.recentModels = [];
+                }
+                async init() {
+                    console.log('Dashboard init');
+                    return Promise.resolve();
+                }
+                destroy() { console.log('Dashboard destroy'); }
+            };
+
+            window.Upload = class Upload {
+                init() { console.log('Upload init'); }
+            };
+
+            window.Models = class Models {
+                constructor() {
+                    this.models = [];
+                    this.filteredModels = [];
+                }
+                async init() {
+                    console.log('Models init');
+                    return Promise.resolve();
+                }
+                async showModelDetails(id) { console.log('Show model details:', id); }
+            };
+        }
+
+        function loadSampleData() {
+            const resultDiv = document.getElementById('sample-data-result');
+
+            try {
+                // Sample models
+                const sampleModels = [
+                    {
+                        id: 'model-1',
+                        name: 'Customer Churn Predictor',
+                        description: 'Predicts customer churn based on usage patterns',
+                        format: 'pkl',
+                        status: 'active',
+                        fileSize: 2048576,
+                        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        lastUsed: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                        requestCount: 1247,
+                        successfulRequests: 1198,
+                        avgResponseTime: 145
+                    },
+                    {
+                        id: 'model-2',
+                        name: 'Sales Forecasting Model',
+                        description: 'Time series forecasting for sales predictions',
+                        format: 'h5',
+                        status: 'active',
+                        fileSize: 5242880,
+                        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+                        lastUsed: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                        requestCount: 892,
+                        successfulRequests: 876,
+                        avgResponseTime: 234
+                    }
+                ];
+
+                const sampleUserStats = {
+                    totalRequests: 2139,
+                    avgResponseTime: 189,
+                    successfulRequests: 2074,
+                    errorCount: 65
+                };
+
+                localStorage.setItem('sample_models', JSON.stringify(sampleModels));
+                localStorage.setItem('sample_user_stats', JSON.stringify(sampleUserStats));
+                localStorage.setItem('auth_token', 'test_token_' + Date.now());
+                localStorage.setItem('user_email', 'test@example.com');
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Sample Data Loaded</h4>
+                        <p>Added ${sampleModels.length} sample models and user stats to localStorage.</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Failed to Load Sample Data</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function testAppConstructor() {
+            const resultDiv = document.getElementById('constructor-result');
+
+            try {
+                setupMocks();
+
+                console.log('🧪 Testing App constructor...');
+                console.log('App class type:', typeof window.App);
+
+                if (typeof window.App === 'undefined') {
+                    throw new Error('App class is not defined. Make sure app.js is loaded.');
+                }
+
+                testApp = new window.App();
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Constructor Test Passed</h4>
+                        <p>App instance created successfully without binding errors.</p>
+                        <p><strong>Current page:</strong> ${testApp.currentPage}</p>
+                        <p><strong>Initialized:</strong> ${testApp.initialized}</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Constructor Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        function testMethodBindings() {
+            const resultDiv = document.getElementById('bindings-result');
+
+            if (!testApp) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ No App Instance</h4>
+                        <p>Please run the constructor test first.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const methods = [
+                    'handleLogin',
+                    'handleRegister',
+                    'logout',
+                    'showPage',
+                    'refresh',
+                    'showModelDetails',
+                    'handleInitialLoad',
+                    'showLoginForm',
+                    'showRegisterForm',
+                    'createLoginModal',
+                    'createRegisterModal',
+                    'createFormGroup'
+                ];
+
+                const results = methods.map(method => {
+                    const type = typeof testApp[method];
+                    const bound = testApp[method] && testApp[method].name === 'bound ' + method;
+                    return { method, type, bound, exists: type === 'function' };
+                });
+
+                const allExist = results.every(r => r.exists);
+
+                resultDiv.innerHTML = `
+                    <div class="${allExist ? 'success' : 'error'}">
+                        <h4>${allExist ? '✅' : '❌'} Method Bindings Test</h4>
+                        <p><strong>All methods exist:</strong> ${allExist}</p>
+                        <table border="1" style="width: 100%; border-collapse: collapse;">
+                            <tr><th>Method</th><th>Type</th><th>Exists</th></tr>
+                            ${results.map(r => `
+                                <tr>
+                                    <td>${r.method}</td>
+                                    <td>${r.type}</td>
+                                    <td>${r.exists ? '✅' : '❌'}</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Method Bindings Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testAppInitialization() {
+            const resultDiv = document.getElementById('init-result');
+
+            if (!testApp) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ No App Instance</h4>
+                        <p>Please run the constructor test first.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                console.log('🧪 Testing App initialization...');
+
+                // Test authentication check
+                const isAuth = testApp.checkAuthentication();
+                console.log('Authentication check:', isAuth);
+
+                if (isAuth) {
+                    // Test initialization
+                    await testApp.init();
+                    console.log('App initialization completed');
+
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Initialization Test Passed</h4>
+                            <p>App initialized successfully.</p>
+                            <p><strong>Authenticated:</strong> ${isAuth}</p>
+                            <p><strong>Initialized:</strong> ${testApp.initialized}</p>
+                            <p><strong>User:</strong> ${testApp.user ? testApp.user.email : 'None'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="info">
+                            <h4>ℹ️ Authentication Required</h4>
+                            <p>App requires authentication. Login form would be shown.</p>
+                            <p>This is expected behavior when no auth token is present.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Initialization Test Failed</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        function openDashboard() {
+            window.open('/', '_blank');
+        }
+
+        // Auto-setup mocks when page loads
+        setupMocks();
+    </script>
+    <script src="/js/app.js"></script>
+    <script>
+        // Verify App class is available after loading
+        console.log('App class available:', typeof window.App);
+        if (typeof window.App === 'undefined') {
+            console.error('App class not found! Check script loading order.');
+        }
+    </script>
+</body>
+
+</html>

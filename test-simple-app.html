@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple App Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; }
+        button { margin: 5px; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer; background: #007bff; color: white; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Simple App Constructor Test</h1>
+    <p>Testing if the App class can be instantiated without errors.</p>
+
+    <button onclick="runTest()">Run Test</button>
+    <button onclick="clearResults()">Clear Results</button>
+    <button onclick="openDashboard()">Open Dashboard</button>
+
+    <div id="results"></div>
+
+    <!-- Load scripts in correct order -->
+    <script>
+        // Setup mocks first
+        console.log('Setting up mocks...');
+        
+        // Mock functions
+        window.showToast = function(message, type) {
+            console.log(`Toast: ${message} (${type})`);
+        };
+
+        window.showLoading = function(message) {
+            console.log(`Loading: ${message}`);
+        };
+
+        window.hideLoading = function() {
+            console.log('Loading hidden');
+        };
+
+        window.isAuthenticated = function() {
+            return localStorage.getItem('auth_token') !== null;
+        };
+
+        // Mock DOM elements
+        const mockElements = {
+            'user-email': document.createElement('span'),
+            'logout-btn': document.createElement('button'),
+            'test-registration-btn': document.createElement('button'),
+            'test-login-btn': document.createElement('button'),
+            'total-models': document.createElement('span'),
+            'total-requests': document.createElement('span'),
+            'avg-response-time': document.createElement('span'),
+            'active-models': document.createElement('span'),
+            'recent-models-list': document.createElement('div'),
+            'usage-chart': document.createElement('canvas'),
+            'models-grid': document.createElement('div'),
+            'no-models': document.createElement('div'),
+            'search-models': document.createElement('input'),
+            'filter-status': document.createElement('select'),
+            'filter-format': document.createElement('select')
+        };
+
+        // Override getElementById
+        const originalGetElementById = document.getElementById;
+        document.getElementById = function(id) {
+            if (id === 'results') {
+                return originalGetElementById.call(document, id);
+            }
+            return mockElements[id] || originalGetElementById.call(document, id);
+        };
+
+        // Add sample data
+        const sampleModels = [
+            {
+                id: 'model-1',
+                name: 'Test Model',
+                description: 'A test model',
+                format: 'pkl',
+                status: 'active',
+                fileSize: 1024,
+                createdAt: new Date().toISOString(),
+                requestCount: 100,
+                successfulRequests: 95,
+                avgResponseTime: 150
+            }
+        ];
+
+        const sampleUserStats = {
+            totalRequests: 100,
+            avgResponseTime: 150,
+            successfulRequests: 95,
+            errorCount: 5
+        };
+
+        localStorage.setItem('sample_models', JSON.stringify(sampleModels));
+        localStorage.setItem('sample_user_stats', JSON.stringify(sampleUserStats));
+        localStorage.setItem('auth_token', 'test_token');
+        localStorage.setItem('user_email', 'test@example.com');
+
+        console.log('Mocks setup complete');
+    </script>
+
+    <!-- Load utility scripts -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+
+    <!-- Mock component classes -->
+    <script>
+        window.Dashboard = class Dashboard {
+            constructor() {
+                this.stats = { totalModels: 0, totalRequests: 0, avgResponseTime: 0, activeModels: 0 };
+                this.recentModels = [];
+            }
+            async init() { 
+                console.log('Dashboard init'); 
+                return Promise.resolve();
+            }
+            destroy() { console.log('Dashboard destroy'); }
+        };
+
+        window.Upload = class Upload {
+            init() { console.log('Upload init'); }
+        };
+
+        window.Models = class Models {
+            constructor() {
+                this.models = [];
+                this.filteredModels = [];
+            }
+            async init() { 
+                console.log('Models init'); 
+                return Promise.resolve();
+            }
+            async showModelDetails(id) { console.log('Show model details:', id); }
+        };
+
+        console.log('Component classes defined');
+    </script>
+
+    <!-- Load main app -->
+    <script src="/js/app.js"></script>
+
+    <!-- Test functions -->
+    <script>
+        function runTest() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                console.log('🧪 Starting App constructor test...');
+                console.log('App class available:', typeof window.App);
+                
+                if (typeof window.App === 'undefined') {
+                    throw new Error('App class is not defined');
+                }
+
+                // Create App instance
+                const testApp = new window.App();
+                console.log('✅ App instance created:', testApp);
+
+                // Test method bindings
+                const methods = [
+                    'handleLogin', 'handleRegister', 'logout', 'showPage', 'refresh',
+                    'showModelDetails', 'handleInitialLoad', 'showLoginForm', 'showRegisterForm'
+                ];
+
+                const methodResults = methods.map(method => ({
+                    method,
+                    exists: typeof testApp[method] === 'function',
+                    type: typeof testApp[method]
+                }));
+
+                const allMethodsExist = methodResults.every(r => r.exists);
+
+                resultsDiv.innerHTML = `
+                    <div class="result ${allMethodsExist ? 'success' : 'error'}">
+                        <h3>${allMethodsExist ? '✅' : '❌'} App Constructor Test</h3>
+                        <p><strong>App class type:</strong> ${typeof window.App}</p>
+                        <p><strong>Instance created:</strong> ${testApp ? 'Yes' : 'No'}</p>
+                        <p><strong>Current page:</strong> ${testApp.currentPage}</p>
+                        <p><strong>Initialized:</strong> ${testApp.initialized}</p>
+                        <p><strong>All methods bound:</strong> ${allMethodsExist}</p>
+                        
+                        <h4>Method Bindings:</h4>
+                        <table border="1" style="width: 100%; border-collapse: collapse;">
+                            <tr><th>Method</th><th>Type</th><th>Status</th></tr>
+                            ${methodResults.map(r => `
+                                <tr>
+                                    <td>${r.method}</td>
+                                    <td>${r.type}</td>
+                                    <td>${r.exists ? '✅' : '❌'}</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+
+                        ${allMethodsExist ? 
+                            '<p><strong>🎉 All tests passed! The App class is working correctly.</strong></p>' :
+                            '<p><strong>⚠️ Some methods are missing or not bound correctly.</strong></p>'
+                        }
+                    </div>
+                `;
+
+                // Test authentication and initialization
+                if (allMethodsExist) {
+                    testInitialization(testApp, resultsDiv);
+                }
+
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Test Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testInitialization(testApp, resultsDiv) {
+            try {
+                console.log('🧪 Testing app initialization...');
+                
+                const isAuth = testApp.checkAuthentication();
+                console.log('Authentication check:', isAuth);
+
+                if (isAuth) {
+                    await testApp.init();
+                    
+                    resultsDiv.innerHTML += `
+                        <div class="result success">
+                            <h3>✅ Initialization Test Passed</h3>
+                            <p><strong>Authenticated:</strong> ${isAuth}</p>
+                            <p><strong>Initialized:</strong> ${testApp.initialized}</p>
+                            <p><strong>User email:</strong> ${testApp.user ? testApp.user.email : 'None'}</p>
+                            <p><strong>Dashboard component:</strong> ${testApp.dashboard ? 'Created' : 'None'}</p>
+                            <p><strong>Models component:</strong> ${testApp.models ? 'Created' : 'None'}</p>
+                            <p><strong>Upload component:</strong> ${testApp.upload ? 'Created' : 'None'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML += `
+                        <div class="result info">
+                            <h3>ℹ️ Authentication Required</h3>
+                            <p>App would show login form (expected behavior)</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="result error">
+                        <h3>❌ Initialization Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function openDashboard() {
+            window.open('/', '_blank');
+        }
+
+        // Auto-run test when page loads
+        window.addEventListener('load', () => {
+            console.log('Page loaded, running test...');
+            setTimeout(runTest, 100);
+        });
+    </script>
+</body>
+</html>

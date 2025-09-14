@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Authentication Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .error-box {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .progress {
+            display: none;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Fix Authentication Error</h1>
+            <p>Resolve the "Invalid or expired token" error when testing models</p>
+        </div>
+
+        <div class="error-box">
+            <h3>❌ Problem</h3>
+            <p>You're getting this error when trying to test models:</p>
+            <code>{"error": "Invalid or expired token","timestamp": "2025-09-13T20:09:16.568Z"}</code>
+        </div>
+
+        <div class="info-box">
+            <h3>🔍 Cause</h3>
+            <p>The frontend is using fake session tokens instead of real JWT tokens from the backend.</p>
+            <ul>
+                <li>Frontend stores: <code>session_${timestamp}</code></li>
+                <li>Backend expects: Valid JWT token or API key</li>
+                <li>Result: Authentication fails</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Check Current Authentication</h3>
+            <p>Let's see what authentication data you currently have:</p>
+            <button class="btn" onclick="checkCurrentAuth()">Check Current Auth</button>
+            <div id="auth-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Fix Authentication</h3>
+            <p>This will clear fake tokens and create a new user with proper authentication:</p>
+            <button class="btn btn-success" onclick="fixAuthentication()">Fix Authentication</button>
+            <div class="progress" id="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <p id="progress-text">Starting...</p>
+            </div>
+            <div id="fix-result"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Test Model Prediction</h3>
+            <p>After fixing authentication, test if model prediction works:</p>
+            <button class="btn" onclick="testModelPrediction()" id="test-btn" disabled>Test Model Prediction</button>
+            <div id="test-result"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Return to Dashboard</h3>
+            <p>If everything works, you can return to the main dashboard:</p>
+            <button class="btn btn-success" onclick="returnToDashboard()" id="dashboard-btn" disabled>Return to Dashboard</button>
+        </div>
+
+        <div class="log" id="log" style="display: none;">
+            <h4>Debug Log:</h4>
+            <div id="log-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let fixComplete = false;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const logContent = document.getElementById('log-content');
+            
+            logDiv.style.display = 'block';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            
+            logContent.innerHTML += `<div>[${timestamp}] ${icon} ${message}</div>`;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+
+        function updateProgress(percent, text) {
+            const progressDiv = document.getElementById('progress');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            
+            progressDiv.style.display = 'block';
+            progressFill.style.width = percent + '%';
+            progressText.textContent = text;
+        }
+
+        function checkCurrentAuth() {
+            const statusDiv = document.getElementById('auth-status');
+            
+            const authToken = localStorage.getItem('auth_token');
+            const apiKey = localStorage.getItem('api_key');
+            const userEmail = localStorage.getItem('user_email');
+            
+            let status = '<h4>Current Authentication Status:</h4>';
+            status += `<p><strong>Auth Token:</strong> ${authToken || 'None'}</p>`;
+            status += `<p><strong>API Key:</strong> ${apiKey || 'None'}</p>`;
+            status += `<p><strong>User Email:</strong> ${userEmail || 'None'}</p>`;
+            
+            if (authToken && authToken.startsWith('session_')) {
+                status += '<div class="error-box"><strong>Problem Found:</strong> Fake session token detected!</div>';
+            } else if (authToken || apiKey) {
+                status += '<div class="success-box"><strong>Status:</strong> Authentication data found</div>';
+            } else {
+                status += '<div class="info-box"><strong>Status:</strong> No authentication data</div>';
+            }
+            
+            statusDiv.innerHTML = status;
+            log('Checked current authentication status');
+        }
+
+        async function fixAuthentication() {
+            const resultDiv = document.getElementById('fix-result');
+            
+            try {
+                log('Starting authentication fix...');
+                updateProgress(10, 'Clearing fake tokens...');
+                
+                // Clear fake tokens
+                const authToken = localStorage.getItem('auth_token');
+                if (authToken && authToken.startsWith('session_')) {
+                    localStorage.removeItem('auth_token');
+                    log('Removed fake session token');
+                }
+                localStorage.removeItem('user_email');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_subscription');
+                
+                updateProgress(30, 'Registering new user...');
+                
+                // Register new user
+                const testUser = {
+                    email: `test-${Date.now()}@example.com`,
+                    password: 'TestPassword123!'
+                };
+                
+                log(`Registering user: ${testUser.email}`);
+                
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testUser)
+                });
+                
+                const result = await response.json();
+                
+                updateProgress(60, 'Processing registration...');
+                
+                if (response.ok && result.token) {
+                    log('Registration successful', 'success');
+                    
+                    // Store real token
+                    localStorage.setItem('auth_token', result.token);
+                    localStorage.setItem('user_email', result.user.email);
+                    localStorage.setItem('user_id', result.user.id);
+                    localStorage.setItem('user_subscription', result.user.subscription);
+                    
+                    updateProgress(80, 'Testing authentication...');
+                    
+                    // Test authentication
+                    const testResponse = await fetch('/api/models', {
+                        headers: { 'Authorization': `Bearer ${result.token}` }
+                    });
+                    
+                    updateProgress(100, 'Authentication fix complete!');
+                    
+                    if (testResponse.ok) {
+                        log('Authentication test passed', 'success');
+                        
+                        resultDiv.innerHTML = `
+                            <div class="success-box">
+                                <h4>✅ Authentication Fixed Successfully!</h4>
+                                <p><strong>User:</strong> ${result.user.email}</p>
+                                <p><strong>Token:</strong> Valid JWT token stored</p>
+                                <p>You can now test model predictions.</p>
+                            </div>
+                        `;
+                        
+                        document.getElementById('test-btn').disabled = false;
+                        fixComplete = true;
+                        
+                    } else {
+                        throw new Error('Authentication test failed');
+                    }
+                } else {
+                    throw new Error(result.error?.message || 'Registration failed');
+                }
+                
+            } catch (error) {
+                log(`Fix failed: ${error.message}`, 'error');
+                
+                resultDiv.innerHTML = `
+                    <div class="error-box">
+                        <h4>❌ Fix Failed</h4>
+                        <p>${error.message}</p>
+                        <p>Please check the server logs or try again.</p>
+                    </div>
+                `;
+                
+                updateProgress(0, 'Fix failed');
+            }
+        }
+
+        async function testModelPrediction() {
+            const resultDiv = document.getElementById('test-result');
+            
+            if (!fixComplete) {
+                resultDiv.innerHTML = '<div class="error-box">Please fix authentication first.</div>';
+                return;
+            }
+            
+            try {
+                log('Testing model prediction...');
+                
+                const token = localStorage.getItem('auth_token');
+                const testData = {
+                    bedrooms: 3,
+                    bathrooms: 2,
+                    sqft: 1500,
+                    age: 10
+                };
+                
+                const response = await fetch('/api/predict/test-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('Model prediction successful', 'success');
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success-box">
+                            <h4>✅ Model Prediction Works!</h4>
+                            <p><strong>Prediction:</strong> $${result.prediction?.toLocaleString()}</p>
+                            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                            <p><strong>Processing Time:</strong> ${result.processingTime?.toFixed(2)}ms</p>
+                            <p>The authentication error is now fixed!</p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('dashboard-btn').disabled = false;
+                    
+                } else {
+                    throw new Error(result.error?.message || 'Prediction failed');
+                }
+                
+            } catch (error) {
+                log(`Prediction test failed: ${error.message}`, 'error');
+                
+                resultDiv.innerHTML = `
+                    <div class="error-box">
+                        <h4>❌ Prediction Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function returnToDashboard() {
+            log('Returning to dashboard...');
+            window.location.href = '/';
+        }
+
+        // Auto-check auth on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkCurrentAuth, 500);
+        });
+    </script>
+</body>
+</html>
